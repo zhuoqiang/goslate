@@ -54,6 +54,8 @@ _opener = urllib2.build_opener(
     
 
 class Error(Exception):
+    '''Main exception type for goslate API
+    '''
     pass
 
 
@@ -91,17 +93,26 @@ except ImportError:
     
             
 def _execute(tasks):
-    tasks = list(tasks)
-    if len(tasks) < 2 or not _executor:
-        return [t() for t in tasks]
-    else:
-        future_results = [_executor.submit(t) for t in tasks]
-        done, not_done = futures.wait(future_results, return_when=futures.FIRST_EXCEPTION)
-        if not_done:
-            [i.cancel() for i in not_done]
-        else:
-            return [i.result() for i in future_results]
+    AT_LEAST_TASK_COUNT_FOR_CONCURRENT = 2
+    first_tasks = [next(tasks, None) for i in range(AT_LEAST_TASK_COUNT_FOR_CONCURRENT)]
+    tasks = (task for task in itertools.chain(first_tasks, tasks) if task)
     
+    if not first_tasks[-1] or not _executor:
+        for each in tasks:
+            yield each()
+    else:
+        exception = None
+        for each in [_executor.submit(t) for t in tasks]:
+            if exception:
+                each.cancel()
+            else:
+                exception = each.exception()
+                if not exception:
+                    yield each.result()
+                    
+        if exception:
+            raise exception
+        
     
 def _basic_translate(text, target_language, source_language=''):
     if not target_language:
@@ -166,7 +177,7 @@ def get_languages():
     return languages
         
 
-def _large_text_translate(text, target_language='zh-CN', source_lauguage=''):
+def _translate_text(text, target_language='zh-CN', source_lauguage=''):
     def split_text(text):
         start = 0
         text = urllib.quote_plus(text)
@@ -216,7 +227,7 @@ def translate(text, target_language, source_language=''):
         raise Error('missing target language')
     
     if not _is_sequence(text):
-        return _large_text_translate(unicode(text).encode('utf-8'), target_language, source_language)
+        return _translate_text(unicode(text).encode('utf-8'), target_language, source_language)
     
     JOINT = u'\n\u26ff\n'
     UTF8_JOINT = JOINT.encode('utf-8')
@@ -235,7 +246,7 @@ def translate(text, target_language, source_language=''):
                 
         
     def make_task(text):
-        return lambda: _large_text_translate(text, target_language, source_language).split(JOINT)
+        return lambda: _translate_text(text, target_language, source_language).split(JOINT)
         
     return itertools.chain(*_execute(make_task(i) for i in join_texts(text)))
 
@@ -314,29 +325,29 @@ class _Tests(unittest.TestCase):
         self.assertEqual((u'你好世界。\n\n你好', u'en'), _basic_translate('\n\nhello world.\n\nhello\n\n', 'zh-cn'))
         
         
-    def test__large_text_translate(self):
-        self.assertEqual(u'', _large_text_translate('\n \n\t\n', 'en'))
+    def test__translate_text(self):
+        self.assertEqual(u'', _translate_text('\n \n\t\n', 'en'))
         
-        self.assertEqual(u'你好世界。', _large_text_translate('hello world.', 'zh-cn'))
-        self.assertEqual(u'你好世界。', _large_text_translate('hello world.', 'zh-CN', 'en'))
-        self.assertEqual(u'你好世界。', _large_text_translate('hallo welt.', 'zh-CN'))
+        self.assertEqual(u'你好世界。', _translate_text('hello world.', 'zh-cn'))
+        self.assertEqual(u'你好世界。', _translate_text('hello world.', 'zh-CN', 'en'))
+        self.assertEqual(u'你好世界。', _translate_text('hallo welt.', 'zh-CN'))
         
         # self.assertRaisesRegexp(Error, 'Invalid target language', translate, '', 'en-US')
         # self.assertRaisesRegexp(Error, 'Invalid source language', translate, '', 'en', 'en-US')
         
-        self.assertNotEqual(u'你好世界。', _large_text_translate('hallo welt.', 'zh-CN', 'en'))
+        self.assertNotEqual(u'你好世界。', _translate_text('hallo welt.', 'zh-CN', 'en'))
 
         test_string = 'hello     '
         exceed_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) + 1
-        self.assertRaisesRegexp(Error, 'input too large', _large_text_translate, test_string*exceed_allowed_times, 'zh')
+        self.assertRaisesRegexp(Error, 'input too large', _translate_text, test_string*exceed_allowed_times, 'zh')
 
-        self.assertRaises(Error, _large_text_translate, 'hello', '')
+        self.assertRaises(Error, _translate_text, 'hello', '')
         
-        self.assertEqual(u'你好世界。\n\n你好', _large_text_translate('\n\nhello world.\n\nhello\n\n', 'zh-cn'))
+        self.assertEqual(u'你好世界。\n\n你好', _translate_text('\n\nhello world.\n\nhello\n\n', 'zh-cn'))
 
         test_string = 'hello!    '
         exceed_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) + 10
-        self.assertEqual(u'你好！'*exceed_allowed_times, _large_text_translate(test_string*exceed_allowed_times, 'zh'))
+        self.assertEqual(u'你好！'*exceed_allowed_times, _translate_text(test_string*exceed_allowed_times, 'zh'))
         
         
     def test_translate(self):
@@ -391,12 +402,9 @@ class _Tests(unittest.TestCase):
 
 
     def test_massive(self):
-        translate(['hello world. %s' % i for i in range(1000)], 'zh-cn')
+        times = 20000
+        self.assertEqual(times, sum(1 for _ in translate(('hello world. %s' % i for i in range(times)), 'zh-cn')))
 
-    def test_simple(self):
-        list(translate(['hello world. %s' % i for i in range(3)], 'zh-cn'))
-        translate(['hello', 'world'], 'zh-cn')
-        
         
     def test__main(self):
         import StringIO
