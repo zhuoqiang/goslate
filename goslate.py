@@ -1,13 +1,26 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Goslate, Unofficial Free Google Translate API
+'''Goslate, the unofficial Free Google Translate API
+
+.. module:: goslate
+    :synopsis: A useful module indeed.
+
+.. moduleauthor:: ZHUO Qiang <zhuo.qiang@gmail.com>
+
+
+.. _Language\ reference: https://developers.google.com/translate/v2/using_rest#language-params
+
+
+futures https://pypi.python.org/pypi/futures
+
 
 - command line arguments for target langauge, source language, encoding setting, proxy
 - fix codec error when print on screen
 - python3 support
 - proxy support
 - use only '\n' for joiner
+- generator API for performance improvement
 '''
 
 import sys
@@ -22,13 +35,15 @@ import socket
 import xml.etree.ElementTree
 
 __auther__ = 'ZHUO Qiang'
+__email__ = 'zhuo.qiang@gmail.com'
+__copyright__ = "Copyright 2013, http://zhuoqiang.me"
+__license__ = "MIT"
 __date__ = '2013-05-11'
 __version_info__ = (0, 8, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 
-_MAX_LENGTH_PER_QUERY = 1900
+_MAX_LENGTH_PER_QUERY = 1850
 
-# set to True to enable debug information
 _DEBUG = False
 # _DEBUG = True
 
@@ -88,10 +103,6 @@ def _execute(tasks):
             return [i.result() for i in future_results]
     
     
-def _is_valid_language(language):
-    return language.lower() in [i.lower() for i in get_languages().keys()]
-        
-
 def _basic_translate(text, target_language, source_language=''):
     if not target_language:
         raise Error('Missing target language')
@@ -99,9 +110,6 @@ def _basic_translate(text, target_language, source_language=''):
     if not text.strip():
         return unicode(''), unicode(target_language)
 
-    if isinstance(text, unicode):
-        text = text.encode('utf-8')
-        
     # Browser request for 'hello world' is:
     # http://translate.google.com/translate_a/t?client=t&hl=en&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&multires=1&prev=conf&psl=en&ptl=en&otf=1&it=sel.2016&ssel=0&tsel=0&prev=enter&oc=3&ssel=0&tsel=0&sc=1&text=hello%20world
     
@@ -126,7 +134,12 @@ def _basic_translate(text, target_language, source_language=''):
 
 
 def get_languages():
-    # cache
+    '''Discover Supported Languages
+
+    It returns iso639-1 language codes for supported languages for translation. Some language codes also include a country code, like zh-CN or zh-TW. The result is cached per process after first successful query.
+
+    :returns: a dictionay of language code to language name which currently supported.
+    '''
     if hasattr(get_languages, 'languages'):
         return get_languages.languages
     
@@ -147,7 +160,8 @@ def get_languages():
         languages[i.get('target_id')] = i.get('target_name')
         languages[i.get('source_id')] = i.get('source_name')
 
-    languages[''] = languages.get('auto', '')
+    if 'auto' in languages:
+        del languages['auto']
     get_languages.languages = languages
     return languages
         
@@ -181,49 +195,72 @@ def _is_sequence(arg):
         hasattr(arg, "__getitem__") or hasattr(arg, "__iter__"))
 
 
-def translate(texts, target_language='zh-CN', source_language=''):
+def translate(text, target_language, source_language=''):
+    '''Translate text from source language to target language using Google Translation Service
+    
+    :param text: The source text to be translated. Batch translation are supported via sequence or generator
+    :type text: utf-8 str or unicode. Or a sequence of strings for batch input
+    
+    :param target_language: The language to translate the source text into. The value should be one of the language codes listed in `get_languages` (or in Language\ reference_)
+    :type target_language: str or unicode
+
+    :param source_language: The language of the source text. The value should be one of the language codes listed in `get_languages` (or in Language\ reference_)
+    If a language is not specified, the system will attempt to identify the source language automatically.
+    :type source_language: str or unicode
+    
+    :returns:  unicode, the translated text. Or a translated text generator in case of batch input
+    :raises: Error if parameter type or value is not valid
+    '''
+    
     if not target_language:
         raise Error('missing target language')
     
-    if not _is_sequence(texts):
-        return _large_text_translate(texts, target_language, source_language)
+    if not _is_sequence(text):
+        return _large_text_translate(unicode(text).encode('utf-8'), target_language, source_language)
     
-    JOIN = u'\n\u26ff\n'
-    UTF8_JOIN = JOIN.encode('utf-8')
+    JOINT = u'\n\u26ff\n'
+    UTF8_JOINT = JOINT.encode('utf-8')
     
     def join_texts(texts):
-        texts = (i.strip() for i in texts)
+        texts = (unicode(i).strip().encode('utf-8') for i in texts)
         text = next(texts)
         for i in texts:
-            new_text = UTF8_JOIN.join((text, i))
+            new_text = UTF8_JOINT.join((text, i))
             if len(urllib.quote_plus(new_text)) < _MAX_LENGTH_PER_QUERY:
                 text = new_text
             else:
                 yield text
                 text = i
-            
         yield text
                 
         
     def make_task(text):
-        return lambda: _large_text_translate(text, target_language, source_language).split(JOIN)
+        return lambda: _large_text_translate(text, target_language, source_language).split(JOINT)
         
-    return itertools.chain(*_execute(make_task(i) for i in join_texts(texts)))
+    return itertools.chain(*_execute(make_task(i) for i in join_texts(text)))
 
 
 def _detect_language(text):
     if isinstance(text, str):
         text = text.decode('utf-8')
-    return _basic_translate(text[:50], 'en')[1]
+    return _basic_translate(text[:50].encode('utf-8'), 'en')[1]
 
 
-def detect(texts):
-    if _is_sequence(texts):
-        return _execute(functools.partial(_detect_language, i) for i in texts)
-    return _detect_language(texts)
+def detect(text):
+    '''Detect Language of the input text
+    
+    :param text: The source text whose language you want to identify. Batch detection are supported via sequence or generator
+    :type text: utf-8 str or unicode. Or a sequence of strings for batch input
+    
+    :returns:  unicode, the language code. Or a language code generator in case of batch input
+    :raises: Error if parameter type or value is not valid
+    '''
+    if _is_sequence(text):
+        return _execute(functools.partial(_detect_language, i) for i in text)
+    return _detect_language(text)
 
 
-def main(argv):
+def _main(argv):
     name = os.path.splitext(os.path.basename(argv[0]))[0]
     
     if len(argv) < 2:
@@ -356,18 +393,21 @@ class _Tests(unittest.TestCase):
     def test_massive(self):
         translate(['hello world. %s' % i for i in range(1000)], 'zh-cn')
 
-    def test_main(self):
+    def test_simple(self):
+        list(translate(['hello world. %s' % i for i in range(3)], 'zh-cn'))
+        translate(['hello', 'world'], 'zh-cn')
+        
+        
+    def test__main(self):
         import StringIO
         sys.stdin = StringIO.StringIO('hello world')
         sys.stdout = StringIO.StringIO()
-        main([sys.argv[0], 'zh-CN'])
+        _main([sys.argv[0], 'zh-CN'])
         self.assertEqual(u'你好世界\n', sys.stdout.getvalue())
         
 
     def test_get_languages(self):
         expected = {
-            '': 'Detect language',
-            'auto': 'Detect language',
             'el': 'Greek',
             'eo': 'Esperanto',
             'en': 'English',
@@ -428,6 +468,6 @@ class _Tests(unittest.TestCase):
         
 if __name__ == '__main__':
     try:
-        main(sys.argv)
+        _main(sys.argv)
     except:
         print sys.exc_info()[1]
