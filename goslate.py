@@ -1,26 +1,28 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Goslate, the unofficial Free Google Translate API
+'''
+Unofficial Free Google Translation API
+========================================
 
-.. module:: goslate
-    :synopsis: A useful module indeed.
+Goslate provides you free access to Google Translation Service
 
-.. moduleauthor:: ZHUO Qiang <zhuo.qiang@gmail.com>
-
-
-.. _Language\ reference: https://developers.google.com/translate/v2/using_rest#language-params
-
-
-futures https://pypi.python.org/pypi/futures
+- Free: use google translate web site which is public avalible and totally free
+- High speed: Batch and concurrent as much as possible. `Library futures <https://pypi.python.org/pypi/futures>`_ is required to get the best performance
 
 
-- command line arguments for target langauge, source language, encoding setting, proxy
-- fix codec error when print on screen
-- python3 support
-- proxy support
-- use only '\n' for joiner
-- generator API for performance improvement
+Example::
+
+ >>> import goslate
+ >>> languages = goslate.get_languages()
+ >>> language_names = languages.itervalues()
+ >>> language_names_in_chinese = goslate.translate(language_names, 'zh-CN')
+ >>> language_codes = goslate.detect(language_names_in_chinese)
+ >>> for code in language_codes:
+ ...     assert 'zh-CN' == code
+ ...
+ >>>
+ 
 '''
 
 import sys
@@ -34,15 +36,16 @@ import time
 import socket
 import xml.etree.ElementTree
 
-__auther__ = 'ZHUO Qiang'
+__author__ = 'ZHUO Qiang'
 __email__ = 'zhuo.qiang@gmail.com'
-__copyright__ = "Copyright 2013, http://zhuoqiang.me"
+__copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
 __version_info__ = (0, 8, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
+__home__ = 'http://bitbucket.org/zhuoqiang/goslate'
 
-_MAX_LENGTH_PER_QUERY = 1850
+_MAX_LENGTH_PER_QUERY = 1800
 
 _DEBUG = False
 # _DEBUG = True
@@ -54,7 +57,7 @@ _opener = urllib2.build_opener(
     
 
 class Error(Exception):
-    '''Main exception type for goslate API
+    '''Error type
     '''
     pass
 
@@ -67,14 +70,14 @@ def _open_url(url):
     request = urllib2.Request(url, headers={'User-Agent':'Mozilla/4.0'})
     
     # retry when get (<class 'socket.error'>, error(54, 'Connection reset by peer')
-    for i in range(4):
+    for i in range(5):
         try:
-            response = _opener.open(request)
+            response = _opener.open(request, timeout=4)
             response_content = response.read()
             if _DEBUG:
                 print response_content
             return response_content
-        except socket.error as e:  
+        except socket.error as e:
             if _DEBUG:
                 import threading
                 print threading.currentThread(), e
@@ -86,15 +89,15 @@ def _open_url(url):
 
 try:
     import concurrent.futures as futures
-    _executor = futures.ThreadPoolExecutor(max_workers=120)
+    _executor = futures.ThreadPoolExecutor(max_workers=20)
 except ImportError:
     futures = None
     _executor = None
     
             
 def _execute(tasks):
-    AT_LEAST_TASK_COUNT_FOR_CONCURRENT = 2
-    first_tasks = [next(tasks, None) for i in range(AT_LEAST_TASK_COUNT_FOR_CONCURRENT)]
+    LEAST_TASK_COUNT_FOR_CONCURRENT = 2
+    first_tasks = [next(tasks, None) for i in range(LEAST_TASK_COUNT_FOR_CONCURRENT)]
     tasks = (task for task in itertools.chain(first_tasks, tasks) if task)
     
     if not first_tasks[-1] or not _executor:
@@ -126,8 +129,8 @@ def _basic_translate(text, target_language, source_language=''):
     
     GOOGLE_TRASLATE_URL = 'http://translate.google.com/translate_a/t'
     GOOGLE_TRASLATE_PARAMETERS = {
-        # t client will receiver non-standard json format
-        # we change client to something other than t to get the standard json response
+        # 't' client will receiver non-standard json format
+        # change client to something other than 't' to get standard json response
         'client': 'z',
         'sl': source_language,
         'tl': target_language,
@@ -139,7 +142,7 @@ def _basic_translate(text, target_language, source_language=''):
     url = '?'.join((GOOGLE_TRASLATE_URL, urllib.urlencode(GOOGLE_TRASLATE_PARAMETERS)))
     response_content = _open_url(url)
     data = json.loads(response_content)
-    translation = ''.join(i['trans'] for i in data['sentences'])
+    translation = u''.join(i['trans'] for i in data['sentences'])
     detected_source_language = data['src']
     return translation, detected_source_language
 
@@ -147,9 +150,21 @@ def _basic_translate(text, target_language, source_language=''):
 def get_languages():
     '''Discover Supported Languages
 
-    It returns iso639-1 language codes for supported languages for translation. Some language codes also include a country code, like zh-CN or zh-TW. The result is cached per process after first successful query.
+    It returns iso639-1 language codes for
+    `supported languages <https://developers.google.com/translate/v2/using_rest#language-params>`_
+    for translation. Some language codes also include a country code, like zh-CN or zh-TW.
+    
+    It only queries Google once and caches the result for later use
+        
+    :returns: a dict of supported language code to language name mapping
 
-    :returns: a dictionay of language code to language name which currently supported.
+    Example::
+
+     >>> languages = get_languages()
+     >>> assert 'zh' in languages
+     >>> print languages['zh']
+     Chinese
+ 
     '''
     if hasattr(get_languages, 'languages'):
         return get_languages.languages
@@ -209,18 +224,30 @@ def _is_sequence(arg):
 def translate(text, target_language, source_language=''):
     '''Translate text from source language to target language using Google Translation Service
     
-    :param text: The source text to be translated. Batch translation are supported via sequence or generator
-    :type text: utf-8 str or unicode. Or a sequence of strings for batch input
+    :param text: The source text(s) to be translated. Batch translation is supported via sequence input
+    :type text: utf-8 str; unicode; sequence of string
     
-    :param target_language: The language to translate the source text into. The value should be one of the language codes listed in `get_languages` (or in Language\ reference_)
-    :type target_language: str or unicode
+    :param target_language: The language to translate the source text into. The value should be one of the language codes listed in :func:`get_languages`
+    :type target_language: str; unicode
 
-    :param source_language: The language of the source text. The value should be one of the language codes listed in `get_languages` (or in Language\ reference_)
-    If a language is not specified, the system will attempt to identify the source language automatically.
-    :type source_language: str or unicode
+    :param source_language: The language of the source text. The value should be one of the language codes listed in :func:`get_languages`. If a language is not specified, the system will attempt to identify the source language automatically.
+    :type source_language: str; unicode
     
-    :returns:  unicode, the translated text. Or a translated text generator in case of batch input
+    :returns: the translated text(s)
+    :rtype: unicode or unicode generator depends on input type
     :raises: Error if parameter type or value is not valid
+
+    Example::
+
+     >>> print translate('hello world', 'de')
+     Hallo Welt
+     >>> 
+     >>> for i in translate(['thank', u'you'], 'de'):
+     ...     print i
+     ...
+     danke
+     Sie
+     
     '''
     
     if not target_language:
@@ -260,11 +287,22 @@ def _detect_language(text):
 def detect(text):
     '''Detect Language of the input text
     
-    :param text: The source text whose language you want to identify. Batch detection are supported via sequence or generator
-    :type text: utf-8 str or unicode. Or a sequence of strings for batch input
-    
-    :returns:  unicode, the language code. Or a language code generator in case of batch input
+    :param text: The source text(s) whose language you want to identify. Batch detection is supported via sequence input
+    :type text: utf-8 str; unicode; sequence of strings
+    :returns:  the language code(s)
+    :rtype: unicode or unicode generator depends on input type
     :raises: Error if parameter type or value is not valid
+
+    Example::
+
+     >>> print detect('hello world')
+     en
+     >>> for i in detect([u'hello', 'Hallo']):
+     ...     print i
+     ...
+     en
+     de
+    
     '''
     if _is_sequence(text):
         return _execute(functools.partial(_detect_language, i) for i in text)
@@ -295,7 +333,7 @@ eg. translate README file to Chinese: %(name)s zh-CN ./README
 # ======================================================================
 import unittest
 
-class _Tests(unittest.TestCase):
+class _UnitTest(unittest.TestCase):
     def setUp(self):
         pass
     
@@ -402,7 +440,7 @@ class _Tests(unittest.TestCase):
 
 
     def test_massive(self):
-        times = 20000
+        times = 1000
         self.assertEqual(times, sum(1 for _ in translate(('hello world. %s' % i for i in range(times)), 'zh-cn')))
 
         
@@ -473,6 +511,9 @@ class _Tests(unittest.TestCase):
             'sr': 'Serbian',}
         self.assertDictEqual(expected, get_languages())
         
+        
+import doctest        
+_docstringTests = doctest.DocTestSuite(translate.__module__)
         
 if __name__ == '__main__':
     try:
