@@ -2,26 +2,43 @@
 # -*- coding: utf-8 -*-
 
 '''
-Unofficial Free Google Translation API
-========================================
+Goslate: unofficial Free Google Translation API
+################################################
 
-Goslate provides you free access to Google Translation Service
+Goslate provides free access to Google Translation Service through public Google translate web site:
 
-- Free: use google translate web site which is public avalible and totally free
-- High speed: Batch and concurrent as much as possible. `Library futures <https://pypi.python.org/pypi/futures>`_ is required to get the best performance
+- Free: you know it ;)
+- Fast: batch, cache and concurrently fetch. 
+- Simple: 3 APIs
 
+  - :func:`translate`
+  - :func:`detect`
+  - :func:`get_languages`
 
 Example::
 
+ >>> # All APIs are in goslate module
  >>> import goslate
+ >>> 
+ >>> # You could get all supported language list through get_languages
  >>> languages = goslate.get_languages()
- >>> language_names = languages.itervalues()
- >>> language_names_in_chinese = goslate.translate(language_names, 'zh-CN')
+ >>> print languages['en']
+ English
+ >>>
+ >>> # Tranlate the languages' name into Chinese
+ >>> language_names = languages.values()
+ >>> language_names_in_chinese = goslate.translate(language_names, 'zh')
+ >>> 
+ >>> # verify each Chinese name is really in Chinese using detect
  >>> language_codes = goslate.detect(language_names_in_chinese)
  >>> for code in language_codes:
- ...     assert 'zh-CN' == code
+ ...         assert 'zh-CN' == code
  ...
  >>>
+
+ 
+API Reference 
+=================================================
  
 '''
 
@@ -41,14 +58,13 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (0, 8, 0)
+__version_info__ = (1, 0, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'http://bitbucket.org/zhuoqiang/goslate'
 
 _MAX_LENGTH_PER_QUERY = 1800
 
 _DEBUG = False
-# _DEBUG = True
 
 _debuglevel = _DEBUG and 1 or 0
 _opener = urllib2.build_opener(
@@ -89,7 +105,7 @@ def _open_url(url):
 
 try:
     import concurrent.futures as futures
-    _executor = futures.ThreadPoolExecutor(max_workers=20)
+    _executor = futures.ThreadPoolExecutor(max_workers=120)
 except ImportError:
     futures = None
     _executor = None
@@ -119,7 +135,7 @@ def _execute(tasks):
     
 def _basic_translate(text, target_language, source_language=''):
     if not target_language:
-        raise Error('Missing target language')
+        raise Error('invalid target language')
     
     if not text.strip():
         return unicode(''), unicode(target_language)
@@ -148,15 +164,15 @@ def _basic_translate(text, target_language, source_language=''):
 
 
 def get_languages():
-    '''Discover Supported Languages
+    '''Discover supported languages
 
     It returns iso639-1 language codes for
     `supported languages <https://developers.google.com/translate/v2/using_rest#language-params>`_
     for translation. Some language codes also include a country code, like zh-CN or zh-TW.
     
-    It only queries Google once and caches the result for later use
+    .. note:: It only queries Google once for the first time and use cached result afterwards
         
-    :returns: a dict of supported language code to language name mapping
+    :returns: a dict of all supported language code and language name mapping ``{'language-code', 'Language name'}``
 
     Example::
 
@@ -192,13 +208,17 @@ def get_languages():
     return languages
         
 
-def _translate_text(text, target_language='zh-CN', source_lauguage=''):
+_SEPERATORS = [urllib.quote_plus(i.encode('utf-8')) for i in
+                 u'.!?,;。，？！:："\'“”’‘#$%&()（）*×+/<=>@＃￥[\]…［］^`{|}｛｝～~\n\r\t ']
+
+def _translate_single_text(text, target_language='zh-CN', source_lauguage=''):
     def split_text(text):
         start = 0
         text = urllib.quote_plus(text)
         length = len(text)
         while (length - start) > _MAX_LENGTH_PER_QUERY:
-            for seperator in (urllib.quote_plus(i) for i in ('.', '!', '?', '。', '！', '？', '\n', ',', '，')):
+            # !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+            for seperator in _SEPERATORS:
                 index = text.rfind(seperator, start, start+_MAX_LENGTH_PER_QUERY)
                 if index != -1:
                     break
@@ -222,11 +242,16 @@ def _is_sequence(arg):
 
 
 def translate(text, target_language, source_language=''):
-    '''Translate text from source language to target language using Google Translation Service
+    '''Translate text from source language to target language
+    
+    .. note::
+     - Input all source strings at once. Goslate will batch and fetch concurrently for maximize speed.
+     - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
+     - It returns generator on batch input in order to better fit pipeline architecture
     
     :param text: The source text(s) to be translated. Batch translation is supported via sequence input
-    :type text: utf-8 str; unicode; sequence of string
-    
+    :type text: UTF-8 str; unicode; string sequence (list, tuple, iterator, generator)
+     
     :param target_language: The language to translate the source text into. The value should be one of the language codes listed in :func:`get_languages`
     :type target_language: str; unicode
 
@@ -234,8 +259,13 @@ def translate(text, target_language, source_language=''):
     :type source_language: str; unicode
     
     :returns: the translated text(s)
-    :rtype: unicode or unicode generator depends on input type
-    :raises: Error if parameter type or value is not valid
+     - unicode: on single string input
+     - generator of unicode: on batch input of string sequence
+    
+    :raises:
+     - :class:`Error` ('invalid target language') if target language is not set
+     - :class:`Error` ('input too large') if input a single large word without any punctuation or space in between
+    
 
     Example::
 
@@ -243,7 +273,7 @@ def translate(text, target_language, source_language=''):
      Hallo Welt
      >>> 
      >>> for i in translate(['thank', u'you'], 'de'):
-     ...     print i
+     ...        print i
      ...
      danke
      Sie
@@ -251,10 +281,10 @@ def translate(text, target_language, source_language=''):
     '''
     
     if not target_language:
-        raise Error('missing target language')
+        raise Error('invalid target language')
     
     if not _is_sequence(text):
-        return _translate_text(unicode(text).encode('utf-8'), target_language, source_language)
+        return _translate_single_text(unicode(text).encode('utf-8'), target_language, source_language)
     
     JOINT = u'\n\u26ff\n'
     UTF8_JOINT = JOINT.encode('utf-8')
@@ -273,9 +303,9 @@ def translate(text, target_language, source_language=''):
                 
         
     def make_task(text):
-        return lambda: _translate_text(text, target_language, source_language).split(JOINT)
+        return lambda: _translate_single_text(text, target_language, source_language).split(JOINT)
         
-    return itertools.chain(*_execute(make_task(i) for i in join_texts(text)))
+    return itertools.chain.from_iterable(_execute(make_task(i) for i in join_texts(text)))
 
 
 def _detect_language(text):
@@ -285,12 +315,19 @@ def _detect_language(text):
 
 
 def detect(text):
-    '''Detect Language of the input text
+    '''Detect language of the input text
+    
+    .. note::
+     - Input all source strings at once. Goslate will detect concurrently for maximize speed.
+     - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
+     - It returns generator on batch input in order to better fit pipeline architecture.
     
     :param text: The source text(s) whose language you want to identify. Batch detection is supported via sequence input
-    :type text: utf-8 str; unicode; sequence of strings
+    :type text: UTF-8 str; unicode; sequence of strings
     :returns:  the language code(s)
-    :rtype: unicode or unicode generator depends on input type
+     - unicode: on single string input
+     - generator of unicode: on batch input of string sequence
+    
     :raises: Error if parameter type or value is not valid
 
     Example::
@@ -298,7 +335,7 @@ def detect(text):
      >>> print detect('hello world')
      en
      >>> for i in detect([u'hello', 'Hallo']):
-     ...     print i
+     ...        print i
      ...
      en
      de
@@ -328,193 +365,6 @@ eg. translate README file to Chinese: %(name)s zh-CN ./README
     print '\n'.join(translate(fileinput.input(argv[2:]), target_language))
         
     
-# ======================================================================
-# Unit test
-# ======================================================================
-import unittest
-
-class _UnitTest(unittest.TestCase):
-    def setUp(self):
-        pass
-    
-    def tearDown(self):
-        pass
-
-    def test__basic_translate(self):
-        self.assertEqual((u'', u'en'), _basic_translate('\n \t\n', 'en'))
-        
-        self.assertEqual((u'hello world.', u'en'), _basic_translate('hello world.', 'en'))
-        self.assertEqual((u'你好世界。', u'en'), _basic_translate('hello world.', 'zh-cn'))
-        
-        # self.assertRaisesRegexp(Error, 'Invalid target language', _basic_translate, '', 'en-US')
-        # self.assertRaisesRegexp(Error, 'Invalid source language', _basic_translate, '', 'en', 'en-US')
-        
-        self.assertEqual((u'你好世界。', u'de'), _basic_translate('hallo welt. \n\n', 'zh-CN'))
-        
-        self.assertNotEqual((u'你好世界。', u'en'), _basic_translate('hallo welt.', 'zh-CN', 'en'))
-
-        test_string = 'hello     '
-        max_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) - 1
-        self.assertEqual((u'你好'*max_allowed_times, u'en'), _basic_translate(test_string*max_allowed_times, 'zh'))
-
-        self.assertRaisesRegexp(Error, 'input too large', _basic_translate, test_string*(max_allowed_times+10), 'zh')
-        self.assertRaises(Error, _basic_translate, 'hello', '')
-
-        self.assertEqual((u'你好世界。\n\n你好', u'en'), _basic_translate('\n\nhello world.\n\nhello\n\n', 'zh-cn'))
-        
-        
-    def test__translate_text(self):
-        self.assertEqual(u'', _translate_text('\n \n\t\n', 'en'))
-        
-        self.assertEqual(u'你好世界。', _translate_text('hello world.', 'zh-cn'))
-        self.assertEqual(u'你好世界。', _translate_text('hello world.', 'zh-CN', 'en'))
-        self.assertEqual(u'你好世界。', _translate_text('hallo welt.', 'zh-CN'))
-        
-        # self.assertRaisesRegexp(Error, 'Invalid target language', translate, '', 'en-US')
-        # self.assertRaisesRegexp(Error, 'Invalid source language', translate, '', 'en', 'en-US')
-        
-        self.assertNotEqual(u'你好世界。', _translate_text('hallo welt.', 'zh-CN', 'en'))
-
-        test_string = 'hello     '
-        exceed_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) + 1
-        self.assertRaisesRegexp(Error, 'input too large', _translate_text, test_string*exceed_allowed_times, 'zh')
-
-        self.assertRaises(Error, _translate_text, 'hello', '')
-        
-        self.assertEqual(u'你好世界。\n\n你好', _translate_text('\n\nhello world.\n\nhello\n\n', 'zh-cn'))
-
-        test_string = 'hello!    '
-        exceed_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) + 10
-        self.assertEqual(u'你好！'*exceed_allowed_times, _translate_text(test_string*exceed_allowed_times, 'zh'))
-        
-        
-    def test_translate(self):
-        self.assertListEqual([u''], list(translate(['\n \n\t\n'], 'en')))
-        
-        self.assertListEqual([u'你好世界。'], list(translate(['hello world.'], 'zh-cn')))
-        self.assertEqual(u'你好世界。', translate('hello world.', 'zh-cn'))        
-        self.assertListEqual([u'你好世界。'], list(translate(['hello world.'], 'zh-CN', 'en')))
-        self.assertListEqual([u'你好世界。'], list(translate(['hallo welt.'], 'zh-CN')))
-        
-        self.assertNotEqual([u'你好世界。'], list(translate(['hallo welt.'], 'zh-CN', 'en')))
-
-        # self.assertRaisesRegexp(Error, 'Invalid target language', translate, [''], 'en-US')
-        # self.assertRaisesRegexp(Error, 'Invalid source language', translate, [''], 'en', 'en-US')
-        
-        test_string = 'hello     '
-        exceed_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) + 1
-        self.assertRaisesRegexp(Error, 'input too large', translate, [test_string*exceed_allowed_times], 'zh')
-
-        self.assertRaises(Error, translate, ['hello'], '')
-        
-        self.assertListEqual([u'你好世界。\n\n你好'], list(translate(['\n\nhello world.\n\nhello\n\n'], 'zh-cn')))
-
-        test_string = 'hello!    '
-        exceed_allowed_times = _MAX_LENGTH_PER_QUERY / len(test_string) + 10
-        self.assertListEqual([u'你好！'*exceed_allowed_times], list(translate([test_string*exceed_allowed_times], 'zh')))
-        
-        self.assertListEqual(
-            [u'你好世界。 %s' % i for i in range(400)],
-            list(translate(['hello world. %s' % i for i in range(400)], 'zh-cn')))
-
-        self.assertListEqual([u'你好世界。', u'你好'], list(translate(['\n\nhello world.\n', '\nhello\n\n'], 'zh-cn')))
-        
-
-    def test__detect_lauguage(self):
-        self.assertEqual('en', _detect_language('hello world'))
-        self.assertEqual('zh-CN', _detect_language('你好世界'))
-        self.assertEqual('de', _detect_language('hallo welt.'))
-        self.assertEqual('en', _detect_language('hello world'))        
-        
-        self.assertEqual('zh-CN', _detect_language('你好世界'*1000))
-        
-    def test_detect(self):
-        self.assertListEqual(['en', 'zh-CN', 'de', 'en']*10,
-                             list(detect(['hello world', '你好世界',
-                                          'hallo welt.', 'hello world']*10)))
-
-        self.assertListEqual(['en', 'zh-CN', 'de', 'en']*10,
-                             list(detect(['hello world'*10,
-                                          '你好世界'*100, 'hallo welt.'*1000,
-                                          'hello world'*1000]*10)))
-
-
-    def test_massive(self):
-        times = 1000
-        self.assertEqual(times, sum(1 for _ in translate(('hello world. %s' % i for i in range(times)), 'zh-cn')))
-
-        
-    def test__main(self):
-        import StringIO
-        sys.stdin = StringIO.StringIO('hello world')
-        sys.stdout = StringIO.StringIO()
-        _main([sys.argv[0], 'zh-CN'])
-        self.assertEqual(u'你好世界\n', sys.stdout.getvalue())
-        
-
-    def test_get_languages(self):
-        expected = {
-            'el': 'Greek',
-            'eo': 'Esperanto',
-            'en': 'English',
-            'zh': 'Chinese',
-            'af': 'Afrikaans',
-            'sw': 'Swahili',
-            'ca': 'Catalan',
-            'it': 'Italian',
-            'iw': 'Hebrew',
-            'cy': 'Welsh',
-            'ar': 'Arabic',
-            'ga': 'Irish',
-            'cs': 'Czech',
-            'et': 'Estonian',
-            'gl': 'Galician',
-            'id': 'Indonesian',
-            'es': 'Spanish',
-            'ru': 'Russian',
-            'nl': 'Dutch',
-            'pt': 'Portuguese',
-            'mt': 'Maltese',
-            'tr': 'Turkish',
-            'lt': 'Lithuanian',
-            'lv': 'Latvian',
-            'tl': 'Filipino',
-            'th': 'Thai',
-            'vi': 'Vietnamese',
-            'ro': 'Romanian',
-            'is': 'Icelandic',
-            'pl': 'Polish',
-            'yi': 'Yiddish',
-            'be': 'Belarusian',
-            'fr': 'French',
-            'bg': 'Bulgarian',
-            'uk': 'Ukrainian',
-            'sl': 'Slovenian',
-            'hr': 'Croatian',
-            'de': 'German',
-            'ht': 'Haitian Creole',
-            'da': 'Danish',
-            'fa': 'Persian',
-            'hi': 'Hindi',
-            'fi': 'Finnish',
-            'hu': 'Hungarian',
-            'ja': 'Japanese',
-            'zh-TW': 'Chinese (Traditional)',
-            'sq': 'Albanian',
-            'no': 'Norwegian',
-            'ko': 'Korean',
-            'sv': 'Swedish',
-            'mk': 'Macedonian',
-            'sk': 'Slovak',
-            'zh-CN': 'Chinese (Simplified)',
-            'ms': 'Malay',
-            'sr': 'Serbian',}
-        self.assertDictEqual(expected, get_languages())
-        
-        
-import doctest        
-_docstringTests = doctest.DocTestSuite(translate.__module__)
-        
 if __name__ == '__main__':
     try:
         _main(sys.argv)
