@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 '''
-Goslate: unofficial Free Google Translation API
-################################################
+:mod:`goslate`: unofficial Free Google Translation API
+########################################################
 
-Goslate provides free access to Google Translation Service through public Google translate web site:
+:mod:`goslate` provides free access to Google Translation Service through public Google translate web site:
 
 - Free: you know it ;)
 - Fast: batch, cache and concurrently fetch. 

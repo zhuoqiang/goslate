@@ -11,6 +11,7 @@ templates_path = ['_templates']
 
 source_suffix = '.rst'
 
+master_doc = '../../README'
 master_doc = 'index'
 
 project = module.__name__
@@ -24,7 +25,7 @@ exclude_patterns = []
 
 add_function_parentheses = True
 
-add_module_names = False
+add_module_names = True
 
 show_authors = True
 
@@ -37,9 +38,9 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ---------------------------------------------------
 
-html_theme = 'default'
+html_theme = 'haiku'# 'scrolls' #'default'
 
-#html_theme_options = {}
+# html_theme_options = {'collapsiblesidebar':True}
 
 #html_theme_path = []
 
@@ -68,7 +69,7 @@ html_use_index = False
 
 #html_split_index = False
 
-html_show_sourcelink = False
+html_show_sourcelink = True
 
 html_show_sphinx = False
 
