@@ -1,21 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''
-:mod:`goslate`: unofficial Free Google Translation API
-########################################################
+'''Unofficial free google translation API
 
-:mod:`goslate` provides free access to Google Translation Service through public Google translate web site:
+All goslate API lives in this module
 
-- Free: you know it ;)
-- Fast: batch, cache and concurrently fetch. 
-- Simple: 3 APIs
-
-  - :func:`translate`
-  - :func:`detect`
-  - :func:`get_languages`
-
-Example::
+:Example:
 
  >>> # All APIs are in goslate module
  >>> import goslate
@@ -32,14 +22,10 @@ Example::
  >>> # verify each Chinese name is really in Chinese using detect
  >>> language_codes = goslate.detect(language_names_in_chinese)
  >>> for code in language_codes:
- ...         assert 'zh-CN' == code
+ ...     assert 'zh-CN' == code
  ...
  >>>
 
- 
-API Reference 
-=================================================
- 
 '''
 
 import sys
@@ -174,7 +160,7 @@ def get_languages():
         
     :returns: a dict of all supported language code and language name mapping ``{'language-code', 'Language name'}``
 
-    Example::
+    :Example:
 
      >>> languages = get_languages()
      >>> assert 'zh' in languages
@@ -267,13 +253,13 @@ def translate(text, target_language, source_language=''):
      - :class:`Error` ('input too large') if input a single large word without any punctuation or space in between
     
 
-    Example::
+    :Example:
 
      >>> print translate('hello world', 'de')
      Hallo Welt
      >>> 
      >>> for i in translate(['thank', u'you'], 'de'):
-     ...        print i
+     ...     print i
      ...
      danke
      Sie
@@ -335,7 +321,7 @@ def detect(text):
      >>> print detect('hello world')
      en
      >>> for i in detect([u'hello', 'Hallo']):
-     ...        print i
+     ...     print i
      ...
      en
      de
@@ -347,26 +333,30 @@ def detect(text):
 
 
 def _main(argv):
-    name = os.path.splitext(os.path.basename(argv[0]))[0]
-    
-    if len(argv) < 2:
-        print '''%(name)s %(version)s
-text translator using google translation service
+    import optparse
 
-usage: %(name)s <target-language> file1 file2 ...
-read input from stdin if no file specify
-eg. translate README file to Chinese: %(name)s zh-CN ./README
-''' % dict(name=name, version=__version__)
+    usage = "usage: %prog [options] <file1 file2 ...>\n<stdin> will be used as input source if no file specified."
+    
+    parser = optparse.OptionParser(usage=usage, version="%%prog %s @ Copyright %s" % (__version__, __copyright__))
+    parser.add_option('-t', '--target-language', metavar='zh-CN',
+                      help='specify target language to translate the source text into')
+    parser.add_option('-s', '--source-language', default='', metavar='en',
+                      help='specify source language, if not provide it will identify the source language automatically')
+    options, args = parser.parse_args(argv[1:])
+    
+    if not options.target_language:
+        print 'Error: missing target language!'
+        parser.print_help()
         return
     
-    target_language = argv[1]
-    
     import fileinput
-    print '\n'.join(translate(fileinput.input(argv[2:]), target_language))
+    print '\n'.join(translate(fileinput.input(args), options.target_language, options.source_language))
         
     
 if __name__ == '__main__':
     try:
         _main(sys.argv)
     except:
-        print sys.exc_info()[1]
+        error = sys.exc_info()[1]
+        if len(str(error)) > 2:
+            print error

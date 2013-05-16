@@ -1,3 +1,1 @@
-.. automodule:: goslate
-   :members: 
-
+.. include:: ../../README.rst

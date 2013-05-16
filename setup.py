@@ -28,6 +28,8 @@ setup(
     packages=[],
     py_modules=['goslate'],
     long_description=read('README.rst'),
+    install_requires=['futures'],    
+    test_suite='test_goslate',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

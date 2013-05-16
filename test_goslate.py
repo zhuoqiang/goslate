@@ -117,7 +117,7 @@ class UnitTest(unittest.TestCase):
         import StringIO
         sys.stdin = StringIO.StringIO('hello world')
         sys.stdout = StringIO.StringIO()
-        _main([sys.argv[0], 'zh-CN'])
+        _main([sys.argv[0], '-t', 'zh-CN'])
         self.assertEqual(u'你好世界\n', sys.stdout.getvalue())
         
 
