@@ -23,7 +23,7 @@ Usage
  hallo welt
 
  
-Check `API reference <http://pythonhosted.org/goslate/#id6>`_ for more functions
+Check `API reference <http://pythonhosted.org/goslate/#id7>`_ for more functions
  
  
 Install
@@ -36,7 +36,7 @@ Install
  
 or just download `latest goslate.py <https://bitbucket.org/zhuoqiang/goslate/raw/tip/goslate.py>`_ directly and use
 
-.. note:: `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
+`futures <https://pypi.python.org/pypi/futures>`_ is optional but recommended to install for best performance.
 
 
 CLI
@@ -57,3 +57,9 @@ CLI
      $ goslate.py -t zh-CN source/file/a.txt "source file b.txt" > output.txt
 
      
+Contribute
+===========     
+
+- Report `issues & suggestions <https://bitbucket.org/zhuoqiang/goslate/issues>`_
+- Fork `repository <https://bitbucket.org/zhuoqiang/goslate>`_
+- `Donation <http://pythonhosted.org/goslate/#id9>`_
