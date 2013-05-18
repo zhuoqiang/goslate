@@ -62,4 +62,4 @@ Contribute
 
 - Report `issues & suggestions <https://bitbucket.org/zhuoqiang/goslate/issues>`_
 - Fork `repository <https://bitbucket.org/zhuoqiang/goslate>`_
-- `Donation <http://pythonhosted.org/goslate/#donation>`_
+- `Donation <http://pythonhosted.org/goslate/#donate>`_

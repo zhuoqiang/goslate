@@ -7,8 +7,9 @@ Reference
    :members: 
 
 
-Donation
-===========     
+   
+Donate
+================
 
 -
   .. raw:: html
