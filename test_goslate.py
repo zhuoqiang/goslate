@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''
+'''Unit test for goslate module
 '''
 
 import sys
@@ -72,7 +72,8 @@ class UnitTest(unittest.TestCase):
         exceed_allowed_times = gs._MAX_LENGTH_PER_QUERY / len(test_string) + 10
         self.assertEqual(u'你好！'*exceed_allowed_times, gs.translate(test_string*exceed_allowed_times, 'zh'))
         
-        
+
+    def test_translate_batch_input(self):
         self.assertGeneratorEqual([], gs.translate((), 'en'))        
         self.assertGeneratorEqual([u''], gs.translate(['\n \n\t\n'], 'en'))
         self.assertGeneratorEqual([u'你好世界。'], gs.translate([u'hello world.'], 'zh-cn'))
@@ -102,6 +103,7 @@ class UnitTest(unittest.TestCase):
         
         self.assertEqual('zh-CN', gs.detect('你好世界'*1000))
         
+    def test_detect_batch_input(self):
         self.assertGeneratorEqual(['en', 'zh-CN', 'de', 'en']*10,
                                   gs.detect((u'hello world', '你好世界', u'hallo welt.', '')*10))
 
@@ -109,14 +111,14 @@ class UnitTest(unittest.TestCase):
                                   gs.detect(['hello world'*10, u'你好世界'*100, 'hallo welt.'*1000, u'\n\r \t'*1000]*10))
 
 
-    def test_massive(self):
+    def test_translate_massive_input(self):
         times = 1000
         result = gs.translate(('hello world. %s' % i for i in range(times)), 'zh-cn')
         # list(result)
         self.assertGeneratorEqual((u'你好世界。 %s' % i for i in range(times)), result)
 
         
-    def test__main(self):
+    def test_main(self):
         import StringIO
         sys.stdin = StringIO.StringIO('hello world')
         sys.stdout = StringIO.StringIO()
@@ -188,5 +190,6 @@ def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(goslate))
     return tests        
         
+
 if __name__ == '__main__':
     unittest.main()

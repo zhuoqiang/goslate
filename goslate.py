@@ -1,32 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Unofficial free google translation API
-
-All goslate API lives in this module
-
-:Example:
-
->>> # All APIs are in goslate module
->>> import goslate
->>>
->>> gs = goslate.Goslate()
->>> # You could get all supported language list through get_languages
->>> languages = gs.get_languages()
->>> print languages['en']
-English
->>>
->>> # Tranlate the languages' name into Chinese
->>> language_names = languages.values()
->>> language_names_in_chinese = gs.translate(language_names, 'zh')
->>> 
->>> # verify each Chinese name is really in Chinese using detect
->>> language_codes = gs.detect(language_names_in_chinese)
->>> for code in language_codes:
-...     assert 'zh-CN' == code
-...
->>>
-
+'''Unofficial Free Google Translation API
 '''
 
 import sys
@@ -47,13 +22,12 @@ __license__ = "MIT"
 __date__ = '2013-05-11'
 __version_info__ = (1, 0, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
-__home__ = 'http://bitbucket.org/zhuoqiang/goslate'
+__home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 
 
 def _is_sequence(arg):
     return (not isinstance(arg, basestring)) and (
         hasattr(arg, "__getitem__") or hasattr(arg, "__iter__"))
-
 
 
 class Error(Exception):
@@ -63,10 +37,53 @@ class Error(Exception):
 
 
 class Goslate(object):
+    '''All goslate API lives in this class
+
+    You have to first create an instance of Goslate to use this API
+
+    :param opener: The url opener to be used for HTTP/HTTPS query. If not provide, a default opener will be used. For proxy support you should provide an opener with ``urllib2.ProxyHandler``
+    :type debug: `urllib2.OpenerDirector <http://docs.python.org/2/library/urllib2.html#urllib2.OpenerDirector>`_
+        
+    :param retry_times: how many times to retry when connection reset error occured. Default to 4
+    :type retry_times: int
+        
+    :param max_workers: how many query thread workers is allowed for batch input, default to 120
+    
+                        .. note:: it relys on ``futures``, if ``futures`` is not avalible, it will work under single thread mode
+          
+    :type max_workers: int
+
+    :param debug: Turn on/off the debug output
+    :type debug: bool
+
+    :Example:
+
+        >>> import goslate
+        >>>
+        >>> # Create a Goslate instance to use first
+        >>> gs = goslate.Goslate()
+        >>> 
+        >>> # You could get all supported language list through get_languages
+        >>> languages = gs.get_languages()
+        >>> print languages['en']
+        English
+        >>>
+        >>> # Tranlate the languages' name into Chinese
+        >>> language_names = languages.values()
+        >>> language_names_in_chinese = gs.translate(language_names, 'zh')
+        >>> 
+        >>> # verify each Chinese name is really in Chinese using detect
+        >>> language_codes = gs.detect(language_names_in_chinese)
+        >>> for code in language_codes:
+        ...     assert 'zh-CN' == code
+        ...
+        >>>
+    '''
+
     
     _MAX_LENGTH_PER_QUERY = 1800
     
-    def __init__(self, opener=None, debug=False, retry_times=4, max_workers=120):
+    def __init__(self, opener=None, retry_times=4, max_workers=120, debug=False):
         self._DEBUG = False
         self._MIN_TASKS_FOR_CONCURRENT = 2
         self._opener = opener
@@ -239,9 +256,10 @@ class Goslate(object):
         '''Translate text from source language to target language
 
         .. note::
-        - Input all source strings at once. Goslate will batch and fetch concurrently for maximize speed.
-        - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
-        - It returns generator on batch input in order to better fit pipeline architecture
+        
+         - Input all source strings at once. Goslate will batch and fetch concurrently for maximize speed.
+         - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
+         - It returns generator on batch input in order to better fit pipeline architecture
 
         :param text: The source text(s) to be translated. Batch translation is supported via sequence input
         :type text: UTF-8 str; unicode; string sequence (list, tuple, iterator, generator)
@@ -253,25 +271,25 @@ class Goslate(object):
         :type source_language: str; unicode
 
         :returns: the translated text(s)
-        - unicode: on single string input
-        - generator of unicode: on batch input of string sequence
+         - unicode: on single string input
+         - generator of unicode: on batch input of string sequence
 
         :raises:
-        - :class:`Error` ('invalid target language') if target language is not set
-        - :class:`Error` ('input too large') if input a single large word without any punctuation or space in between
+         - :class:`Error` ('invalid target language') if target language is not set
+         - :class:`Error` ('input too large') if input a single large word without any punctuation or space in between
 
 
         :Example:
         
-        >>> gs = Goslate()
-        >>> print gs.translate('hello world', 'de')
-        Hallo Welt
-        >>> 
-        >>> for i in gs.translate(['thank', u'you'], 'de'):
-        ...     print i
-        ...
-        danke
-        Sie
+         >>> gs = Goslate()
+         >>> print gs.translate('hello world', 'de')
+         Hallo Welt
+         >>> 
+         >>> for i in gs.translate(['thank', u'you'], 'de'):
+         ...     print i
+         ...
+         danke
+         Sie
 
         '''
 
@@ -313,28 +331,29 @@ class Goslate(object):
         '''Detect language of the input text
 
         .. note::
-        - Input all source strings at once. Goslate will detect concurrently for maximize speed.
-        - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
-        - It returns generator on batch input in order to better fit pipeline architecture.
+        
+         - Input all source strings at once. Goslate will detect concurrently for maximize speed.
+         - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
+         - It returns generator on batch input in order to better fit pipeline architecture.
 
         :param text: The source text(s) whose language you want to identify. Batch detection is supported via sequence input
         :type text: UTF-8 str; unicode; sequence of strings
-        :returns:  the language code(s)
-        - unicode: on single string input
-        - generator of unicode: on batch input of string sequence
+        :returns: the language code(s)
+         - unicode: on single string input
+         - generator of unicode: on batch input of string sequence
 
         :raises: Error if parameter type or value is not valid
 
         Example::
         
-        >>> gs = Goslate()
-        >>> print gs.detect('hello world')
-        en
-        >>> for i in gs.detect([u'hello', 'Hallo']):
-        ...     print i
-        ...
-        en
-        de
+         >>> gs = Goslate()
+         >>> print gs.detect('hello world')
+         en
+         >>> for i in gs.detect([u'hello', 'Hallo']):
+         ...     print i
+         ...
+         en
+         de
 
         '''
         if _is_sequence(text):

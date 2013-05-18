@@ -1,11 +1,15 @@
 Unofficial Free Google Translation API
 ##########################################
 
-``goslate`` provides you *free* access to google translation service by querying google translation website:
+.. contents:: :local:
 
-- Free: you know it ;)
-- Fast: batch, cache and concurrently fetch
-- Simple: one file module ``Goslate().translate('Hi!', 'zh-CN')``
+``goslate`` provides you *free* access to google translation service by querying google translation website.
+
+It is:
+
+- **Free**: you know it ;)
+- **Fast**: batch, cache and concurrently fetch
+- **Simple**: single file module, just ``Goslate().translate('Hi!', 'zh-CN')``
 
 
 Usage
@@ -14,12 +18,14 @@ Usage
 .. sourcecode:: python
 
  >>> import goslate
- >>>
  >>> gs = goslate.Goslate()
- >>>
  >>> print gs.translate('hello world', 'de')
  hallo welt
 
+ 
+Check `API reference <http://pythonhosted.org/goslate/#id6>`_ for more functions
+ 
+ 
 Install
 ========
 
@@ -28,10 +34,12 @@ Install
   $ pip install goslate
 
  
-or just download `latest goslate.py <./goslate.py>`_ directly to use it
+or just download `latest goslate.py <https://bitbucket.org/zhuoqiang/goslate/raw/tip/goslate.py>`_ directly and use
+
+.. note:: `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
 
 
-CLI usage
+CLI
 ===========
 
 ``goslate.py`` is also a command line tool
@@ -42,14 +50,10 @@ CLI usage
   
      $ echo "hello world" | goslate.py -t zh-CN
 
-- Translate text file(s) into Chinese
+- Translate text file(s) into Chinese, output to UTF-8 file
 
   .. sourcecode:: bash
   
-     $ goslate.py -t zh-CN path/to/source-file/a.txt "path to source file b.txt"
+     $ goslate.py -t zh-CN source/file/a.txt "source file b.txt" > output.txt
 
      
-Feedback
-===========     
-
-Report issues & suggestions to `tracker at bitbucket <https://bitbucket.org/zhuoqiang/goslate/issues>`_
