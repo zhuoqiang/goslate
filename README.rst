@@ -1,43 +1,56 @@
-:mod:`goslate`: unofficial Free Google Translation API
-########################################################
+Unofficial Free Google Translation API
+##########################################
 
-:mod:`goslate` provides you *free* access to google translation service by querying google translation website interface
-
-.. :download:`download test.py <test.py>`
+``goslate`` provides you *free* access to google translation service by querying google translation website:
 
 - Free: you know it ;)
-- Fast: batch, cache and concurrently fetch. 
-- Simple: 3 APIs
+- Fast: batch, cache and concurrently fetch
+- Simple: one file module ``Goslate().translate('Hi', 'zh-CN')``
 
-  - :func:`goslate.translate`
-  - :func:`goslate.detect`
-  - :func:`goslate.get_languages`
+
+Usage
+======
+
+::
+
+ >>> import goslate
+ >>>
+ >>> gs = goslate.Goslate()
+ >>>
+ >>> print gs.translate('hello world', 'de')
+ hallo welt
+
+Install
+========
+
+.. code-block:: bash
   
-It could also be used as a command line tool directly
+  $ pip install goslate
+
+ 
+or just download `latest goslate.py <./goslate.py>` directly to use it
+
+
+CLI usage
+===========
+
+``goslate.py`` is also a command line tool
     
-- Translate text into Chinese. read source text from stdin, output to stdout
+- Translate ``stdin`` input into Chinese
 
   .. code-block:: bash
   
      $ echo "hello world" | goslate.py -t zh-CN
 
-- Translate text file(s) into Chinese. output to stdout
+- Translate text file(s) into Chinese
 
   .. code-block:: bash
   
      $ goslate.py -t zh-CN path/to/source-file/a.txt "path to source file b.txt"
-    
-  
-Reference 
-=================
 
-.. automodule:: goslate
-   :members: 
+     
+Feedback
+===========     
 
-   
-Todo   
-=================
-- proxy support
-- python3 support
-- ignore encoding error when print on screen
-- add command line arguments for encoding setting, proxy
+Report issues & suggestions `here <https://bitbucket.org/zhuoqiang/goslate/issues>`
+
