@@ -23,7 +23,7 @@ Usage
  hallo welt
 
  
-Check `API reference <http://pythonhosted.org/goslate/#id7>`_ for more functions
+Check `API reference <http://pythonhosted.org/goslate/#module-goslate>`_ for more functions
  
  
 Install
@@ -62,4 +62,4 @@ Contribute
 
 - Report `issues & suggestions <https://bitbucket.org/zhuoqiang/goslate/issues>`_
 - Fork `repository <https://bitbucket.org/zhuoqiang/goslate>`_
-- `Donation <http://pythonhosted.org/goslate/#id9>`_
+- `Donation <http://pythonhosted.org/goslate/#donation>`_
