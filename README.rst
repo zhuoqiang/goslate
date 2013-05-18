@@ -5,13 +5,13 @@ Unofficial Free Google Translation API
 
 - Free: you know it ;)
 - Fast: batch, cache and concurrently fetch
-- Simple: one file module ``Goslate().translate('Hi', 'zh-CN')``
+- Simple: one file module ``Goslate().translate('Hi!', 'zh-CN')``
 
 
 Usage
 ======
 
-::
+.. sourcecode:: python
 
  >>> import goslate
  >>>
@@ -23,12 +23,12 @@ Usage
 Install
 ========
 
-.. code-block:: bash
+.. sourcecode:: bash
   
   $ pip install goslate
 
  
-or just download `latest goslate.py <./goslate.py>` directly to use it
+or just download `latest goslate.py <./goslate.py>`_ directly to use it
 
 
 CLI usage
@@ -38,13 +38,13 @@ CLI usage
     
 - Translate ``stdin`` input into Chinese
 
-  .. code-block:: bash
+  .. sourcecode:: bash
   
      $ echo "hello world" | goslate.py -t zh-CN
 
 - Translate text file(s) into Chinese
 
-  .. code-block:: bash
+  .. sourcecode:: bash
   
      $ goslate.py -t zh-CN path/to/source-file/a.txt "path to source file b.txt"
 
@@ -52,5 +52,4 @@ CLI usage
 Feedback
 ===========     
 
-Report issues & suggestions `here <https://bitbucket.org/zhuoqiang/goslate/issues>`
-
+Report issues & suggestions to `tracker at bitbucket <https://bitbucket.org/zhuoqiang/goslate/issues>`_
