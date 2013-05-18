@@ -23,6 +23,7 @@ __date__ = '2013-05-11'
 __version_info__ = (1, 0, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
+__download__ = 'https://pypi.python.org/pypi/goslate'
 
 
 def _is_sequence(arg):
@@ -41,7 +42,9 @@ class Goslate(object):
 
     You have to first create an instance of Goslate to use this API
 
-    :param opener: The url opener to be used for HTTP/HTTPS query. If not provide, a default opener will be used. For proxy support you should provide an opener with ``urllib2.ProxyHandler``
+    :param opener: The url opener to be used for HTTP/HTTPS query.
+                   If not provide, a default opener will be used.
+                   For proxy support you should provide an opener with ``urllib2.ProxyHandler``
     :type debug: `urllib2.OpenerDirector <http://docs.python.org/2/library/urllib2.html#urllib2.OpenerDirector>`_
         
     :param retry_times: how many times to retry when connection reset error occured. Default to 4
@@ -264,10 +267,14 @@ class Goslate(object):
         :param text: The source text(s) to be translated. Batch translation is supported via sequence input
         :type text: UTF-8 str; unicode; string sequence (list, tuple, iterator, generator)
 
-        :param target_language: The language to translate the source text into. The value should be one of the language codes listed in :func:`get_languages`
+        :param target_language: The language to translate the source text into.
+         The value should be one of the language codes listed in :func:`get_languages`
         :type target_language: str; unicode
 
-        :param source_language: The language of the source text. The value should be one of the language codes listed in :func:`get_languages`. If a language is not specified, the system will attempt to identify the source language automatically.
+        :param source_language: The language of the source text.
+                                The value should be one of the language codes listed in :func:`get_languages`.
+                                If a language is not specified,
+                                the system will attempt to identify the source language automatically.
         :type source_language: str; unicode
 
         :returns: the translated text(s)
@@ -336,7 +343,8 @@ class Goslate(object):
          - `futures <https://pypi.python.org/pypi/futures>`_ is required for best performance.
          - It returns generator on batch input in order to better fit pipeline architecture.
 
-        :param text: The source text(s) whose language you want to identify. Batch detection is supported via sequence input
+        :param text: The source text(s) whose language you want to identify.
+                     Batch detection is supported via sequence input
         :type text: UTF-8 str; unicode; sequence of strings
         :returns: the language code(s)
          - unicode: on single string input

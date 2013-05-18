@@ -24,7 +24,7 @@ setup(
     description = module.__doc__,
     license = module.__license__,
     keywords = "google translation i18n l10n",
-    url = module.__home__,
+    url = module.__download__,
     packages=[],
     py_modules=['goslate'],
     long_description=read('README.rst'),
