@@ -52,7 +52,7 @@ class Goslate(object):
         
     :param max_workers: how many query thread workers is allowed for batch input, default to 120
     
-                        .. note:: it relys on ``futures``, if ``futures`` is not avalible, it will work under single thread mode
+                        .. note:: multi thread worker relys on `futures <https://pypi.python.org/pypi/futures>`_, if it is not avalible, ``goslate`` will work under single thread mode
           
     :type max_workers: int
 
@@ -278,8 +278,9 @@ class Goslate(object):
         :type source_language: str; unicode
 
         :returns: the translated text(s)
-         - unicode: on single string input
-         - generator of unicode: on batch input of string sequence
+        
+          - unicode: on single string input
+          - generator of unicode: on batch input of string sequence
 
         :raises:
          - :class:`Error` ('invalid target language') if target language is not set
@@ -345,10 +346,11 @@ class Goslate(object):
 
         :param text: The source text(s) whose language you want to identify.
                      Batch detection is supported via sequence input
-        :type text: UTF-8 str; unicode; sequence of strings
+        :type text: UTF-8 str; unicode; sequence of string
         :returns: the language code(s)
-         - unicode: on single string input
-         - generator of unicode: on batch input of string sequence
+        
+          - unicode: on single string input
+          - generator of unicode: on batch input of string sequence
 
         :raises: Error if parameter type or value is not valid
 
