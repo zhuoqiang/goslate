@@ -23,7 +23,7 @@ Usage
  hallo welt
 
  
-Check `API reference <http://pythonhosted.org/goslate/#module-goslate>`_ for more functions
+For batch translation, language detection, proxy support etc., please check `API reference <http://pythonhosted.org/goslate/#module-goslate>`_
  
  
 Install
