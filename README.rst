@@ -3,7 +3,7 @@ Unofficial Free Google Translation API
 
 .. contents:: :local:
 
-``goslate`` provides you *free* access to google translation service by querying google translation website.
+``goslate`` provides you *free* python API to google translation service by querying google translation website.
 
 It is:
 
