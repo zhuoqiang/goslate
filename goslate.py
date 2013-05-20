@@ -15,6 +15,7 @@ import time
 import socket
 import xml.etree.ElementTree
 
+
 __author__ = 'ZHUO Qiang'
 __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
@@ -24,6 +25,14 @@ __version_info__ = (1, 0, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
+
+
+try:
+    import concurrent.futures
+    _g_executor = concurrent.futures.ThreadPoolExecutor(max_workers=120)
+except ImportError:
+    _g_executor = None
+    
 
 
 def _is_sequence(arg):
@@ -50,12 +59,15 @@ class Goslate(object):
     :param retry_times: how many times to retry when connection reset error occured. Default to 4
     :type retry_times: int
         
-    :param max_workers: how many query thread workers is allowed for batch input, default to 120
+    :param executor: the multi thread executor for handling batch input, default to a global ``futures.ThreadPoolExecutor`` instance with 120 max thead workers if ``futures`` is avalible. Set to None to disable multi thread support
     
                         .. note:: multi thread worker relys on `futures <https://pypi.python.org/pypi/futures>`_, if it is not avalible, ``goslate`` will work under single thread mode
           
     :type max_workers: int
 
+    :param timeout: HTTP request timeout in seconds
+    :type timeout: int/float
+    
     :param debug: Turn on/off the debug output
     :type debug: bool
 
@@ -85,12 +97,13 @@ class Goslate(object):
 
     
     _MAX_LENGTH_PER_QUERY = 1800
-    
-    def __init__(self, opener=None, retry_times=4, max_workers=120, debug=False):
+
+    def __init__(self, opener=None, retry_times=4, executor=_g_executor, timeout=4, debug=False):
         self._DEBUG = False
         self._MIN_TASKS_FOR_CONCURRENT = 2
         self._opener = opener
         self._languages = None
+        self._TIMEOUT = timeout
         if not self._opener:
             debuglevel = self._DEBUG and 1 or 0
             self._opener = urllib2.build_opener(
@@ -98,14 +111,7 @@ class Goslate(object):
                 urllib2.HTTPSHandler(debuglevel=debuglevel))
         
         self._RETRY_TIMES = retry_times
-        
-        try:
-            import concurrent.futures as futures
-            self._executor = futures.ThreadPoolExecutor(max_workers=max_workers)
-        except ImportError:
-            futures = None
-            self._executor = None
-    
+        self._executor = executor
 
     def _open_url(self, url):
         if len(url) > self._MAX_LENGTH_PER_QUERY+100:
@@ -117,7 +123,7 @@ class Goslate(object):
         # retry when get (<class 'socket.error'>, error(54, 'Connection reset by peer')
         for i in range(self._RETRY_TIMES):
             try:
-                response = self._opener.open(request, timeout=4)
+                response = self._opener.open(request, timeout=self._TIMEOUT)
                 response_content = response.read()
                 if self._DEBUG:
                     print response_content
