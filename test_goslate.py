@@ -52,6 +52,8 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(u'', gs.translate('\n \n\t\n', 'en'))
         
         self.assertEqual(u'你好世界。', gs.translate('hello world.', 'zh'))
+        self.assertEqual(u'Hello World.', gs.translate(u'你好世界。', 'en', 'zh'))
+        self.assertEqual(u'Hello World.', gs.translate('你好世界。', 'en'))        
         self.assertEqual(u'你好世界。', gs.translate('hello world.', 'zh-cn', u'en'))
         self.assertEqual(u'你好世界。', gs.translate('hallo welt.', u'zh-CN'))
         self.assertEqual(u'你好世界。', gs.translate(u'hallo welt.', 'zh-CN', 'de'))

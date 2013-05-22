@@ -163,11 +163,13 @@ class Goslate(object):
 
 
     def _basic_translate(self, text, target_language, source_language=''):
+        assert isinstance(text, str)
+        
         if not target_language:
             raise Error('invalid target language')
 
         if not text.strip():
-            return unicode(''), unicode(target_language)
+            return u'', unicode(target_language)
 
         # Browser request for 'hello world' is:
         # http://translate.google.com/translate_a/t?client=t&hl=en&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&multires=1&prev=conf&psl=en&ptl=en&otf=1&it=sel.2016&ssel=0&tsel=0&prev=enter&oc=3&ssel=0&tsel=0&sc=1&text=hello%20world
@@ -241,6 +243,7 @@ class Goslate(object):
                    u'.!?,;。，？！:："\'“”’‘#$%&()（）*×+/<=>@＃￥[\]…［］^`{|}｛｝～~\n\r\t ']
 
     def _translate_single_text(self, text, target_language='zh-CN', source_lauguage=''):
+        assert isinstance(text, str)
         def split_text(text):
             start = 0
             text = urllib.quote_plus(text)
@@ -314,13 +317,16 @@ class Goslate(object):
             raise Error('invalid target language')
 
         if not _is_sequence(text):
-            return self._translate_single_text(unicode(text).encode('utf-8'), target_language, source_language)
+            if isinstance(text, unicode):
+                text = text.encode('utf-8')
+            return self._translate_single_text(text, target_language, source_language)
 
         JOINT = u'\n\u26ff\n'
         UTF8_JOINT = JOINT.encode('utf-8')
 
         def join_texts(texts):
-            texts = (unicode(i).strip().encode('utf-8') for i in texts)
+            texts = (isinstance(i, unicode) and i.encode('utf-8') or i for i in texts)
+            texts = (i.strip() for i in texts)
             text = next(texts)
             for i in texts:
                 new_text = UTF8_JOINT.join((text, i))
