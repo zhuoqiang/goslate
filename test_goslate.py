@@ -168,6 +168,14 @@ class UnitTest(unittest.TestCase):
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8', f.name])
         self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
 
+        with open('for_test.tmp', 'w') as f:
+            f.write(u'你好'.encode('utf-8'))
+        with open('for_test_2.tmp', 'w') as f2:
+            f2.write(u'世界'.encode('utf-8'))
+            
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'en', '-i', 'utf-8', f.name, f2.name])
+        self.assertEqual(u'Hello\nWorld\n'.encode(encoding), sys.stdout.getvalue())
         
 
     def test_get_languages(self):
