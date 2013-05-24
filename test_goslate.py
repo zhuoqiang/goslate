@@ -122,10 +122,27 @@ class UnitTest(unittest.TestCase):
         
     def test_main(self):
         import StringIO
+        encoding = sys.getfilesystemencoding()
+        
         sys.stdin = StringIO.StringIO('hello world')
         sys.stdout = StringIO.StringIO()
         _main([sys.argv[0], '-t', 'zh-CN'])
-        self.assertEqual(u'你好世界\n', sys.stdout.getvalue())
+        self.assertEqual(u'你好世界\n'.encode(encoding), sys.stdout.getvalue())
+        
+        sys.stdin = StringIO.StringIO(u'你好'.encode(encoding))
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'en'])
+        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+        
+        sys.stdin = StringIO.StringIO('hello world')
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'zh-CN', '-o', 'utf-8'])
+        self.assertEqual(u'你好世界\n'.encode('utf-8'), sys.stdout.getvalue())
+        
+        sys.stdin = StringIO.StringIO(u'你好'.encode('utf-8'))
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'en', '-i', 'utf-8'])
+        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
         
 
     def test_get_languages(self):
