@@ -54,8 +54,15 @@ CLI
 
   .. sourcecode:: bash
   
-     $ goslate.py -t zh-CN -o utf-8 source/file/1.txt "source file 2.txt" > output.txt
+     $ goslate.py -t zh-CN -o utf-8 source/1.txt "source 2.txt" > output.txt
 
+     
+use ``--help`` for detail usage
+     
+.. sourcecode:: bash
+  
+   $ goslate.py -h
+     
      
 Contribute
 ===========     
