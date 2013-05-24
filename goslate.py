@@ -396,6 +396,11 @@ def _main(argv):
                       help='specify target language to translate the source text into')
     parser.add_option('-s', '--source-language', default='', metavar='en',
                       help='specify source language, if not provide it will identify the source language automatically')
+    parser.add_option('-i', '--input-encoding', default=sys.getfilesystemencoding(), metavar='utf-8',
+                      help='specify input encoding, default to current console system encoding')
+    parser.add_option('-o', '--output-encoding', default=sys.getfilesystemencoding(), metavar='utf-8',
+                      help='specify output encoding, default to current console system encoding')
+
     options, args = parser.parse_args(argv[1:])
     
     if not options.target_language:
@@ -405,7 +410,9 @@ def _main(argv):
     
     gs = Goslate()
     import fileinput
-    print '\n'.join(gs.translate(fileinput.input(args), options.target_language, options.source_language))
+    input = (i.decode(options.input_encoding) for i in fileinput.input(args))
+    output = gs.translate(input, options.target_language, options.source_language)
+    print u'\n'.join(output).encode(options.output_encoding)
     
     
 if __name__ == '__main__':
