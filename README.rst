@@ -50,11 +50,11 @@ CLI
   
      $ echo "hello world" | goslate.py -t zh-CN
 
-- Translate text file(s) into Chinese, output to UTF-8 file
+- Translate 2 text files into Chinese, output to UTF-8 file
 
   .. sourcecode:: bash
   
-     $ goslate.py -t zh-CN source/file/a.txt "source file b.txt" > output.txt
+     $ goslate.py -t zh-CN -o utf-8 source/file/1.txt "source file 2.txt" > output.txt
 
      
 Contribute
