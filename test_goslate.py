@@ -144,6 +144,31 @@ class UnitTest(unittest.TestCase):
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8'])
         self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
         
+        with open('for_test.tmp', 'w') as f:
+            f.write('hello world')
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'zh-CN', f.name])
+        self.assertEqual(u'你好世界\n'.encode(encoding), sys.stdout.getvalue())
+        
+        with open('for_test.tmp', 'w') as f:
+            f.write('hello world')
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'zh-CN', '-o', 'utf-8', f.name])
+        self.assertEqual(u'你好世界\n'.encode('utf-8'), sys.stdout.getvalue())
+        
+        with open('for_test.tmp', 'w') as f:
+            f.write(u'你好'.encode(encoding))
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'en', f.name])
+        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+        
+        with open('for_test.tmp', 'w') as f:
+            f.write(u'你好'.encode('utf-8'))
+        sys.stdout = StringIO.StringIO()
+        _main([sys.argv[0], '-t', 'en', '-i', 'utf-8', f.name])
+        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+
+        
 
     def test_get_languages(self):
         expected = {
