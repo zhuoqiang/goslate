@@ -426,12 +426,11 @@ def _main(argv):
     
     gs = Goslate()
     import fileinput
-    # inputs = (i.decode(options.input_encoding) for i in fileinput.input(args))
     inputs = fileinput.input(args, openhook=fileinput.hook_encoded(options.input_encoding))
     outputs = gs.translate(inputs, options.target_language, options.source_language)
     for i in outputs:
-        # print(i.encode(options.output_encoding))
         sys.stdout.write((i+u'\n').encode(options.output_encoding))
+        sys.stdout.flush()
     
     
 if __name__ == '__main__':
