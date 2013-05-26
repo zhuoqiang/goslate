@@ -3,11 +3,11 @@
 
 '''Unofficial Free Google Translation API
 '''
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys
 import os
-import urllib2
-import urllib
 import json
 import itertools
 import functools
@@ -15,17 +15,12 @@ import time
 import socket
 import xml.etree.ElementTree
 
-
-__author__ = 'ZHUO Qiang'
-__email__ = 'zhuo.qiang@gmail.com'
-__copyright__ = "2013, http://zhuoqiang.me"
-__license__ = "MIT"
-__date__ = '2013-05-11'
-__version_info__ = (1, 0, 0)
-__version__ = '.'.join(str(i) for i in __version_info__)
-__home__ = 'https://bitbucket.org/zhuoqiang/goslate'
-__download__ = 'https://pypi.python.org/pypi/goslate'
-
+try:
+    from urllib.request import build_opener, Request, HTTPHandler, HTTPSHandler
+    from urllib.parse import quote_plus, urlencode, unquote_plus
+except ImportError:
+    from urllib2 import build_opener, Request, HTTPHandler, HTTPSHandler
+    from urllib import urlencode, unquote_plus, quote_plus
 
 try:
     import concurrent.futures
@@ -34,10 +29,29 @@ except ImportError:
     _g_executor = None
     
 
+__author__ = 'ZHUO Qiang'
+__email__ = 'zhuo.qiang@gmail.com'
+__copyright__ = "2013, http://zhuoqiang.me"
+__license__ = "MIT"
+__date__ = '2013-05-11'
+__version_info__ = (1, 1, 0)
+__version__ = '.'.join(str(i) for i in __version_info__)
+__home__ = 'https://bitbucket.org/zhuoqiang/goslate'
+__download__ = 'https://pypi.python.org/pypi/goslate'
 
+
+try:
+    unicode
+except NameError:
+    unicode = str
+    
 def _is_sequence(arg):
-    return (not isinstance(arg, basestring)) and (
+    return (not isinstance(arg, unicode)) and (
+        not isinstance(arg, bytes)) and (
         hasattr(arg, "__getitem__") or hasattr(arg, "__iter__"))
+    
+def _is_bytes(arg):
+    return isinstance(arg, bytes)
 
 
 class Error(Exception):
@@ -53,7 +67,7 @@ class Goslate(object):
 
     :param opener: The url opener to be used for HTTP/HTTPS query.
                    If not provide, a default opener will be used.
-                   For proxy support you should provide an opener with ``urllib2.ProxyHandler``
+                   For proxy support you should provide an ``opener`` with ``ProxyHandler``
     :type debug: `urllib2.OpenerDirector <http://docs.python.org/2/library/urllib2.html#urllib2.OpenerDirector>`_
         
     :param retry_times: how many times to retry when connection reset error occured. Default to 4
@@ -83,7 +97,7 @@ class Goslate(object):
         >>> 
         >>> # You could get all supported language list through get_languages
         >>> languages = gs.get_languages()
-        >>> print languages['en']
+        >>> print(languages['en'])
         English
         >>>
         >>> # Tranlate the languages' name into Chinese
@@ -109,9 +123,9 @@ class Goslate(object):
         self._TIMEOUT = timeout
         if not self._opener:
             debuglevel = self._DEBUG and 1 or 0
-            self._opener = urllib2.build_opener(
-                urllib2.HTTPHandler(debuglevel=debuglevel),
-                urllib2.HTTPSHandler(debuglevel=debuglevel))
+            self._opener = build_opener(
+                HTTPHandler(debuglevel=debuglevel),
+                HTTPSHandler(debuglevel=debuglevel))
         
         self._RETRY_TIMES = retry_times
         self._executor = executor
@@ -121,24 +135,26 @@ class Goslate(object):
             raise Error('input too large')
 
         # Google forbits urllib2 User-Agent: Python-urllib/2.7
-        request = urllib2.Request(url, headers={'User-Agent':'Mozilla/4.0'})
+        request = Request(url, headers={'User-Agent':'Mozilla/4.0'})
 
+        exception = None
         # retry when get (<class 'socket.error'>, error(54, 'Connection reset by peer')
         for i in range(self._RETRY_TIMES):
             try:
                 response = self._opener.open(request, timeout=self._TIMEOUT)
-                response_content = response.read()
+                response_content = response.read().decode('utf-8')
                 if self._DEBUG:
-                    print response_content
+                    print(response_content)
                 return response_content
             except socket.error as e:
                 if self._DEBUG:
                     import threading
-                    print threading.currentThread(), e
+                    print(threading.currentThread(), e)
                 if 'Connection reset by peer' not in str(e):
                     raise e
+                exception = e
                 time.sleep(0.0001)
-        raise e
+        raise exception
     
 
     def _execute(self, tasks):
@@ -163,7 +179,7 @@ class Goslate(object):
 
 
     def _basic_translate(self, text, target_language, source_language=''):
-        assert isinstance(text, str)
+        # assert _is_bytes(text)
         
         if not target_language:
             raise Error('invalid target language')
@@ -186,7 +202,7 @@ class Goslate(object):
             'text': text
             }
 
-        url = '?'.join((GOOGLE_TRASLATE_URL, urllib.urlencode(GOOGLE_TRASLATE_PARAMETERS)))
+        url = '?'.join((GOOGLE_TRASLATE_URL, urlencode(GOOGLE_TRASLATE_PARAMETERS)))
         response_content = self._open_url(url)
         data = json.loads(response_content)
         translation = u''.join(i['trans'] for i in data['sentences'])
@@ -209,7 +225,7 @@ class Goslate(object):
 
         >>> languages = Goslate().get_languages()
         >>> assert 'zh' in languages
-        >>> print languages['zh']
+        >>> print(languages['zh'])
         Chinese
 
         '''
@@ -221,7 +237,7 @@ class Goslate(object):
             'client': 't',
             }
 
-        url = '?'.join((GOOGLE_TRASLATOR_URL, urllib.urlencode(GOOGLE_TRASLATOR_PARAMETERS)))
+        url = '?'.join((GOOGLE_TRASLATOR_URL, urlencode(GOOGLE_TRASLATOR_PARAMETERS)))
         response_content = self._open_url(url)
         root = xml.etree.ElementTree.fromstring(response_content)
 
@@ -239,14 +255,14 @@ class Goslate(object):
         return self._languages
 
 
-    _SEPERATORS = [urllib.quote_plus(i.encode('utf-8')) for i in
+    _SEPERATORS = [quote_plus(i.encode('utf-8')) for i in
                    u'.!?,;。，？！:："\'“”’‘#$%&()（）*×+/<=>@＃￥[\]…［］^`{|}｛｝～~\n\r\t ']
 
     def _translate_single_text(self, text, target_language='zh-CN', source_lauguage=''):
-        assert isinstance(text, str)
+        assert _is_bytes(text)
         def split_text(text):
             start = 0
-            text = urllib.quote_plus(text)
+            text = quote_plus(text)
             length = len(text)
             while (length - start) > self._MAX_LENGTH_PER_QUERY:
                 for seperator in self._SEPERATORS:
@@ -256,10 +272,10 @@ class Goslate(object):
                 else:
                     raise Error('input too large')
                 end = index + len(seperator)
-                yield urllib.unquote_plus(text[start:end])
+                yield unquote_plus(text[start:end])
                 start = end
 
-            yield urllib.unquote_plus(text[start:])
+            yield unquote_plus(text[start:])
 
         def make_task(text):
             return lambda: self._basic_translate(text, target_language, source_lauguage)[0]
@@ -302,11 +318,11 @@ class Goslate(object):
         :Example:
         
          >>> gs = Goslate()
-         >>> print gs.translate('hello world', 'de')
+         >>> print(gs.translate('hello world', 'de'))
          Hallo Welt
          >>> 
          >>> for i in gs.translate(['thank', u'you'], 'de'):
-         ...     print i
+         ...     print(i)
          ...
          danke
          Sie
@@ -330,7 +346,7 @@ class Goslate(object):
             text = next(texts)
             for i in texts:
                 new_text = UTF8_JOINT.join((text, i))
-                if len(urllib.quote_plus(new_text)) < self._MAX_LENGTH_PER_QUERY:
+                if len(quote_plus(new_text)) < self._MAX_LENGTH_PER_QUERY:
                     text = new_text
                 else:
                     yield text
@@ -345,7 +361,7 @@ class Goslate(object):
 
 
     def _detect_language(self, text):
-        if isinstance(text, str):
+        if _is_bytes(text):
             text = text.decode('utf-8')
         return self._basic_translate(text[:50].encode('utf-8'), 'en')[1]
 
@@ -372,10 +388,10 @@ class Goslate(object):
         Example::
         
          >>> gs = Goslate()
-         >>> print gs.detect('hello world')
+         >>> print(gs.detect('hello world'))
          en
          >>> for i in gs.detect([u'hello', 'Hallo']):
-         ...     print i
+         ...     print(i)
          ...
          en
          de
@@ -404,15 +420,18 @@ def _main(argv):
     options, args = parser.parse_args(argv[1:])
     
     if not options.target_language:
-        print 'Error: missing target language!'
+        print('Error: missing target language!')
         parser.print_help()
         return
     
     gs = Goslate()
     import fileinput
-    input = (i.decode(options.input_encoding) for i in fileinput.input(args))
-    output = gs.translate(input, options.target_language, options.source_language)
-    print u'\n'.join(output).encode(options.output_encoding)
+    # inputs = (i.decode(options.input_encoding) for i in fileinput.input(args))
+    inputs = fileinput.input(args, openhook=fileinput.hook_encoded(options.input_encoding))
+    outputs = gs.translate(inputs, options.target_language, options.source_language)
+    for i in outputs:
+        # print(i.encode(options.output_encoding))
+        sys.stdout.write((i+u'\n').encode(options.output_encoding))
     
     
 if __name__ == '__main__':
@@ -421,4 +440,4 @@ if __name__ == '__main__':
     except:
         error = sys.exc_info()[1]
         if len(str(error)) > 2:
-            print error
+            print(error)
