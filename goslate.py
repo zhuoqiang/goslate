@@ -318,7 +318,7 @@ class Goslate(object):
         :Example:
         
          >>> gs = Goslate()
-         >>> print(gs.translate('hello world', 'de'))
+         >>> print(gs.translate('Hello World', 'de'))
          Hallo Welt
          >>> 
          >>> for i in gs.translate(['thank', u'you'], 'de'):

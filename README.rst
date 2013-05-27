@@ -29,6 +29,9 @@ For batch translation, language detection, proxy support etc., please check `API
 Install
 ========
 
+goslate support both Python2 and Python3. You could install it via:
+
+
 .. sourcecode:: bash
   
   $ pip install goslate
