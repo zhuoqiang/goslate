@@ -426,7 +426,9 @@ def _main(argv):
     
     gs = Goslate()
     import fileinput
-    inputs = fileinput.input(args, openhook=fileinput.hook_encoded(options.input_encoding))
+    # inputs = fileinput.input(args, mode='rU', openhook=fileinput.hook_encoded(options.input_encoding))
+    inputs = fileinput.input(args, mode='rb')
+    inputs = (i.decode(options.input_encoding) for i in inputs)
     outputs = gs.translate(inputs, options.target_language, options.source_language)
     for i in outputs:
         sys.stdout.write((i+u'\n').encode(options.output_encoding))
