@@ -1,4 +1,4 @@
-Unofficial Free Google Translation API
+Unofficial Free Google Translate API
 ##########################################
 
 .. contents:: :local:
