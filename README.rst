@@ -1,5 +1,5 @@
-Unofficial Free Google Translation API
-##########################################
+Goslate: Unofficial Free Google Translation API
+##################################################
 
 .. contents:: :local:
 
