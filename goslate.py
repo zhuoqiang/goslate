@@ -34,7 +34,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 1, 1)
+__version_info__ = (1, 1, 2)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -337,12 +337,17 @@ class Goslate(object):
                 text = text.encode('utf-8')
             return self._translate_single_text(text, target_language, source_language)
 
-        JOINT = u'\n\u26ff\n'
-        UTF8_JOINT = JOINT.encode('utf-8')
+        JOINT = u'\u26ff'
+        UTF8_JOINT = (u'\n%s\n' % JOINT).encode('utf-8')
 
         def join_texts(texts):
-            texts = (isinstance(i, unicode) and i.encode('utf-8') or i for i in texts)
-            texts = (i.strip() for i in texts)
+            def convert_to_utf8(texts):
+                for i in texts:
+                    if isinstance(i, unicode):
+                        i = i.encode('utf-8')
+                    yield i.strip()
+                
+            texts = convert_to_utf8(texts)
             text = next(texts)
             for i in texts:
                 new_text = UTF8_JOINT.join((text, i))
@@ -355,7 +360,7 @@ class Goslate(object):
 
 
         def make_task(text):
-            return lambda: self._translate_single_text(text, target_language, source_language).split(JOINT)
+            return lambda: (i.strip('\n') for i in self._translate_single_text(text, target_language, source_language).split(JOINT))
 
         return itertools.chain.from_iterable(self._execute(make_task(i) for i in join_texts(text)))
 

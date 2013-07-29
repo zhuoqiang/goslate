@@ -102,6 +102,12 @@ class UnitTest(unittest.TestCase):
         self.assertGeneratorEqual([u'你好世界。', u'你好'], gs.translate([b'\n\nhello world.\n', b'\nhello\n\n'], 'zh-cn'))
         
 
+    def test_translate_batch_input_with_empty_string(self):
+        self.assertGeneratorEqual([u'你好世界。', u''], gs.translate([u'hello world.', u''], 'zh-cn'))
+        self.assertGeneratorEqual([u'你好世界。', u'', u'你好'], gs.translate([u'hello world.', u'', u'hello'], 'zh-cn'))
+        self.assertGeneratorEqual([u'', u'你好世界。'], gs.translate([u'', u'hello world.'], 'zh-cn'))        
+        
+        
     def test_detect(self):
         self.assertEqual('en', gs.detect(b''))
         self.assertEqual('en', gs.detect(b'\n\r  \n'))
