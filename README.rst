@@ -1,4 +1,4 @@
-Goslate: Unofficial Free Google Translate API
+Goslate: Free Google Translate API
 ##################################################
 
 .. contents:: :local:
