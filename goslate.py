@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Goslate: Unofficial Free Google Translate API
+'''Goslate: Free Google Translate API
 '''
 from __future__ import print_function
 from __future__ import unicode_literals
