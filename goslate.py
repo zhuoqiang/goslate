@@ -204,7 +204,8 @@ class Goslate(object):
         url = '?'.join((GOOGLE_TRASLATE_URL, urlencode(GOOGLE_TRASLATE_PARAMETERS)))
         response_content = self._open_url(url)
         data = json.loads(response_content)
-        translation = u''.join(i['trans'] for i in data['sentences'])
+        # google may change space to no-break space, we may need to change it back
+        translation = u''.join(i['trans'] for i in data['sentences']).replace(u'\xA0', u' ')
         detected_source_language = data['src']
         return translation, detected_source_language
 
