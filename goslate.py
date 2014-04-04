@@ -13,7 +13,6 @@ import itertools
 import functools
 import time
 import socket
-import xml.etree.ElementTree
 
 try:
     from urllib.request import build_opener, Request, HTTPHandler, HTTPSHandler
@@ -34,7 +33,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 1, 2)
+__version_info__ = (1, 2, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -116,7 +115,7 @@ class Goslate(object):
     _MAX_LENGTH_PER_QUERY = 1800
 
     def __init__(self, opener=None, retry_times=4, executor=_g_executor, timeout=4, debug=False):
-        self._DEBUG = False
+        self._DEBUG = debug
         self._MIN_TASKS_FOR_CONCURRENT = 2
         self._opener = opener
         self._languages = None
@@ -239,18 +238,14 @@ class Goslate(object):
 
         url = '?'.join((GOOGLE_TRASLATOR_URL, urlencode(GOOGLE_TRASLATOR_PARAMETERS)))
         response_content = self._open_url(url)
-        root = xml.etree.ElementTree.fromstring(response_content)
+        data = json.loads(response_content[1:-1])
 
-        if root.tag != 'LanguagePairs':
-            return {}
-
-        languages = {}
-        for i in root.findall('Pair'):
-            languages[i.get('target_id')] = i.get('target_name')
-            languages[i.get('source_id')] = i.get('source_name')
-
+        languages = data['sl']
+        languages.update(data['tl'])
         if 'auto' in languages:
             del languages['auto']
+        if 'zh' not in languages:
+            languages['zh'] = 'Chinese'
         self._languages = languages
         return self._languages
 
@@ -321,17 +316,23 @@ class Goslate(object):
          >>> print(gs.translate('Hello World', 'de'))
          Hallo Welt
          >>> 
-         >>> for i in gs.translate(['thank', u'you'], 'de'):
+         >>> for i in gs.translate(['good', u'morning'], 'de'):
          ...     print(i)
          ...
-         danke
-         Sie
+         gut
+         Morgen
 
         '''
 
         if not target_language:
             raise Error('invalid target language')
 
+        if target_language.lower() == 'zh':
+            target_language = 'zh-CN'
+            
+        if source_language.lower() == 'zh':
+            source_language = 'zh-CN'
+            
         if not _is_sequence(text):
             if isinstance(text, unicode):
                 text = text.encode('utf-8')
