@@ -37,7 +37,6 @@ class UnitTest(unittest.TestCase):
         self.assertIsGenerator(generator)
         self.assertListEqual(list(expectedResult), list(generator))
         
-        
     def test__basic_translate(self):
         self.assertEqual((u'', u'en'), gs._basic_translate(b'\n \t\n', 'en'))
         
@@ -53,6 +52,10 @@ class UnitTest(unittest.TestCase):
         self.assertRaisesRegexp(Error, 'input too large', gs._basic_translate, test_string*(max_allowed_times+10), 'zh')
         self.assertRaisesRegexp(Error, 'invalid target language', gs._basic_translate, b'hello', '')
         
+        
+        
+    def test_translate_space(self):
+        self.assertEqual(u'Hallo\n Welt', gs.translate('hello\n world', 'de', 'en'))
         
     def test_translate(self):
         self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
