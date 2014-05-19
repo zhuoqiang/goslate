@@ -33,7 +33,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 2, 0)
+__version_info__ = (1, 3, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -53,11 +53,23 @@ def _is_bytes(arg):
     return isinstance(arg, bytes)
 
 
+def _unwrapper_single_element(elements):
+    if len(elements) == 1:
+        return elements[0]
+    return elements
+        
+    
 class Error(Exception):
     '''Error type
     '''
     pass
 
+
+KIND_NATIVE = ('trans',)
+
+KIND_ROMANIZED = ('translit',)
+
+KIND_ALL = KIND_NATIVE + KIND_ROMANIZED
 
 class Goslate(object):
     '''All goslate API lives in this class
@@ -67,7 +79,7 @@ class Goslate(object):
     :param opener: The url opener to be used for HTTP/HTTPS query.
                    If not provide, a default opener will be used.
                    For proxy support you should provide an ``opener`` with ``ProxyHandler``
-    :type debug: `urllib2.OpenerDirector <http://docs.python.org/2/library/urllib2.html#urllib2.OpenerDirector>`_
+    :type opener: `urllib2.OpenerDirector <http://docs.python.org/2/library/urllib2.html#urllib2.OpenerDirector>`_
         
     :param retry_times: how many times to retry when connection reset error occured. Default to 4
     :type retry_times: int
@@ -177,14 +189,14 @@ class Goslate(object):
                 raise exception
 
 
-    def _basic_translate(self, text, target_language, source_language=''):
+    def _basic_translate(self, text, target_language, source_language, kind):
         # assert _is_bytes(text)
         
         if not target_language:
             raise Error('invalid target language')
 
         if not text.strip():
-            return u'', unicode(target_language)
+            return tuple(u'' for i in range(len(kind))) , unicode(target_language)
 
         # Browser request for 'hello world' is:
         # http://translate.google.com/translate_a/t?client=t&hl=en&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&multires=1&prev=conf&psl=en&ptl=en&otf=1&it=sel.2016&ssel=0&tsel=0&prev=enter&oc=3&ssel=0&tsel=0&sc=1&text=hello%20world
@@ -204,8 +216,12 @@ class Goslate(object):
         url = '?'.join((GOOGLE_TRASLATE_URL, urlencode(GOOGLE_TRASLATE_PARAMETERS)))
         response_content = self._open_url(url)
         data = json.loads(response_content)
-        # google may change space to no-break space, we may need to change it back
-        translation = u''.join(i['trans'] for i in data['sentences']).replace(u'\xA0', u' ')
+        
+        def extract_translation(kind):
+            # google may change space to no-break space, we may need to change it back
+            return tuple(u''.join(i[part] for i in data['sentences']).replace(u'\xA0', u' ') for part in kind)
+        
+        translation = extract_translation(kind)
         detected_source_language = data['src']
         return translation, detected_source_language
 
@@ -252,9 +268,9 @@ class Goslate(object):
 
 
     _SEPERATORS = [quote_plus(i.encode('utf-8')) for i in
-                   u'.!?,;。，？！:："\'“”’‘#$%&()（）*×+/<=>@＃￥[\]…［］^`{|}｛｝～~\n\r\t ']
+                   u'.!?,;。，？！:："“”’‘#$%&()（）*×+/<=>@＃￥[\]…［］^`{|}｛｝～~\n\r\t ']
 
-    def _translate_single_text(self, text, target_language='zh-CN', source_lauguage=''):
+    def _translate_single_text(self, text, target_language, source_lauguage, kind):
         assert _is_bytes(text)
         def split_text(text):
             start = 0
@@ -274,12 +290,13 @@ class Goslate(object):
             yield unquote_plus(text[start:])
 
         def make_task(text):
-            return lambda: self._basic_translate(text, target_language, source_lauguage)[0]
+            return lambda: self._basic_translate(text, target_language, source_lauguage, kind)[0]
 
-        return ''.join(self._execute(make_task(i) for i in split_text(text)))
+        results = list(self._execute(make_task(i) for i in split_text(text)))
+        return tuple(''.join(i[n] for i in results) for n in range(len(kind)))
 
 
-    def translate(self, text, target_language, source_language=''):
+    def translate(self, text, target_language, source_language='', kind=KIND_NATIVE):
         '''Translate text from source language to target language
 
         .. note::
@@ -337,7 +354,7 @@ class Goslate(object):
         if not _is_sequence(text):
             if isinstance(text, unicode):
                 text = text.encode('utf-8')
-            return self._translate_single_text(text, target_language, source_language)
+            return _unwrapper_single_element(self._translate_single_text(text, target_language, source_language, kind))
 
         JOINT = u'\u26ff'
         UTF8_JOINT = (u'\n%s\n' % JOINT).encode('utf-8')
@@ -362,15 +379,21 @@ class Goslate(object):
 
 
         def make_task(text):
-            return lambda: (i.strip('\n') for i in self._translate_single_text(text, target_language, source_language).split(JOINT))
-
-        return itertools.chain.from_iterable(self._execute(make_task(i) for i in join_texts(text)))
+            def task():
+                r = self._translate_single_text(text, target_language, source_language, kind)
+                r = tuple([i.strip('\n') for i in n.split(JOINT)] for n in r)
+                return itertools.izip(*r)
+                # return r[0]
+            return task
+                
+        return (_unwrapper_single_element(i) for i in
+                itertools.chain.from_iterable(self._execute(make_task(i) for i in join_texts(text))))
 
 
     def _detect_language(self, text):
         if _is_bytes(text):
             text = text.decode('utf-8')
-        return self._basic_translate(text[:50].encode('utf-8'), 'en')[1]
+        return self._basic_translate(text[:50].encode('utf-8'), 'en', '', KIND_NATIVE)[1]
 
 
     def detect(self, text):
