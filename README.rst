@@ -7,9 +7,9 @@ Goslate: Free Google Translate API
 
 It is:
 
-- **Free**: you know it ;)
+- **Free**: get translation through public google web site without fee
 - **Fast**: batch, cache and concurrently fetch
-- **Simple**: single file module, just ``Goslate().translate('Hi!', 'zh-CN')``
+- **Simple**: single file module, just ``Goslate().translate('Hi!', 'zh')``
 
 
 Usage
@@ -39,7 +39,7 @@ goslate support both Python2 and Python3. You could install it via:
  
 or just download `latest goslate.py <https://bitbucket.org/zhuoqiang/goslate/raw/tip/goslate.py>`_ directly and use
 
-`futures <https://pypi.python.org/pypi/futures>`_ is optional but recommended to install for best performance.
+``futures`` `pacakge <https://pypi.python.org/pypi/futures>`_ is optional but recommended to install for best performance in large text translation task.
 
 
 CLI
