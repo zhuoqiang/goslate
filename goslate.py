@@ -119,22 +119,22 @@ class Goslate(object):
     :Example:
 
         >>> import goslate
-        >>>
-        >>> # Create a Goslate instance to use first
+        >>> 
+        >>> # Create a Goslate instance first
         >>> gs = goslate.Goslate()
         >>> 
         >>> # You could get all supported language list through get_languages
         >>> languages = gs.get_languages()
         >>> print(languages['en'])
         English
-        >>>
+        >>> 
         >>> # Tranlate English into German
         >>> print(gs.translate('hello', 'de'))
         Hallo
         >>> # Detect the language of the text
         >>> print(gs.detect('some English words'))
         en
-        >>> # Get romanlized translation (romanlization)
+        >>> # Get goslate object dedicated for romanlized translation (romanlization)
         >>> gs_roman = goslate.Goslate(WRITING_ROMAN)
         >>> print(gs_roman.translate('hello', 'zh'))
         Nǐ hǎo
@@ -445,7 +445,7 @@ class Goslate(object):
           - unicode: on single string input
           - generator of unicode: on batch input of string sequence
 
-        :raises: Error if parameter type or value is not valid
+        :raises: :class:`Error` if parameter type or value is not valid
 
         Example::
         
