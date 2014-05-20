@@ -37,27 +37,32 @@ class UnitTest(unittest.TestCase):
         self.assertIsGenerator(generator)
         self.assertListEqual(list(expectedResult), list(generator))
         
-    # def test__basic_translate(self):
-    #     self.assertEqual((u'', u'en'), gs._basic_translate(b'\n \t\n', 'en', KIND_NATIVE))
-        
-    #     self.assertEqual((u'hello world.', u'en'), gs._basic_translate(b'hello world.', 'en', kind=KIND_NATIVE))
-    #     self.assertEqual((u'你好世界。', u'en'), gs._basic_translate(b'hello world.', 'zh-cn', kind=KIND_NATIVE))
-    #     self.assertEqual((u'你好世界。', u'de'), gs._basic_translate(b'hallo welt. \n\n', 'zh-CN', kind=KIND_NATIVE))
-    #     self.assertNotEqual(u'你好世界。', gs._basic_translate(b'hallo welt.', 'zh-CN', 'en', kind=KIND_NATIVE)[0])
-    #     self.assertEqual((u'你好世界。\n\n你好', u'en'), gs._basic_translate(b'\n\nhello world.\n\nhello\n\n', 'zh-cn', kind=KIND_NATIVE))
-
-    #     test_string = b'hello     '
-    #     max_allowed_times = int(gs._MAX_LENGTH_PER_QUERY / len(test_string) - 1)
-    #     self.assertEqual((u'你好'*max_allowed_times, u'en'), gs._basic_translate(test_string*max_allowed_times, 'zh', kind=KIND_NATIVE))
-    #     self.assertRaisesRegexp(Error, 'input too large', gs._basic_translate, test_string*(max_allowed_times+10), 'zh', kind=KIND_NATIVE)
-    #     self.assertRaisesRegexp(Error, 'invalid target language', gs._basic_translate, b'hello', '', kind=KIND_NATIVE)
-        
-        
     def test_translate_space(self):
         self.assertEqual(u'Hallo\n Welt', gs.translate('hello\n world', 'de', 'en'))
         
+    def test_translate_roman(self):
+        gs = Goslate(kind=KIND_ROMAN)
+        self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
+        self.assertEqual(u'N\u01d0 h\u01ceo sh\xecji\xe8.', gs.translate(b'hello world.', 'zh'))
+        self.assertEqual(u'', gs.translate(b'hello', 'de'))        
+        self.assertGeneratorEqual([u'N\u01d0 h\u01ceo', u'Sh\xecji\xe8'], gs.translate([b'hello', 'world'], 'zh'))
+
+        
+    def test_translate_native_and_roman(self):
+        gs = Goslate(KIND_NATIVE_AND_ROMAN)
+        self.assertEqual((u'', u''), gs.translate(b'\n \n\t\n', 'en'))
+        self.assertEqual((u'你好世界。', u'N\u01d0 h\u01ceo sh\xecji\xe8.'),
+                         gs.translate(b'hello world.', 'zh'))
+        self.assertEqual((u'Hallo', u''),
+                         gs.translate(b'Hello', 'de'))
+        
+        self.assertGeneratorEqual([(u'你好', u'N\u01d0 h\u01ceo'), (u'世界', u'Sh\xecji\xe8')],
+                                  gs.translate([b'hello', 'world'], 'zh'))        
+        
+        
     def test_translate(self):
         self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
+        
         self.assertEqual(u'你好世界。', gs.translate(b'hello world.', 'zh'))
         self.assertEqual(u'Hello World.', gs.translate(u'你好世界。', 'en', 'zh'))
         self.assertEqual(u'Hello World.', gs.translate(u'你好世界。'.encode('utf-8'), 'en'))
