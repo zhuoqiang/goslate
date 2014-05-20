@@ -41,7 +41,7 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(u'Hallo\n Welt', gs.translate('hello\n world', 'de', 'en'))
         
     def test_translate_roman(self):
-        gs = Goslate(kind=KIND_ROMAN)
+        gs = Goslate(writing=WRITING_ROMAN)
         self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
         self.assertEqual(u'N\u01d0 h\u01ceo sh\xecji\xe8.', gs.translate(b'hello world.', 'zh'))
         self.assertEqual(u'', gs.translate(b'hello', 'de'))        
@@ -49,7 +49,7 @@ class UnitTest(unittest.TestCase):
 
         
     def test_translate_native_and_roman(self):
-        gs = Goslate(KIND_NATIVE_AND_ROMAN)
+        gs = Goslate(WRITING_NATIVE_AND_ROMAN)
         self.assertEqual((u'', u''), gs.translate(b'\n \n\t\n', 'en'))
         self.assertEqual((u'你好世界。', u'N\u01d0 h\u01ceo sh\xecji\xe8.'),
                          gs.translate(b'hello world.', 'zh'))

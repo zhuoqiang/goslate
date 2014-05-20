@@ -13,13 +13,20 @@ import itertools
 import functools
 import time
 import socket
+import random
 
 try:
+    # python 3
     from urllib.request import build_opener, Request, HTTPHandler, HTTPSHandler
-    from urllib.parse import quote_plus, urlencode, unquote_plus
+    from urllib.parse import quote_plus, urlencode, unquote_plus, urljoin
+    izip = zip
+
 except ImportError:
+    # python 2
     from urllib2 import build_opener, Request, HTTPHandler, HTTPSHandler
     from urllib import urlencode, unquote_plus, quote_plus
+    from urlparse import urljoin
+    from itertools import izip
 
 try:
     import concurrent.futures
@@ -65,21 +72,25 @@ class Error(Exception):
     pass
 
 
-KIND_NATIVE = ('trans',)
+WRITING_NATIVE = ('trans',)
+'''native target language writing system'''
 
-KIND_ROMAN = ('translit',)
+WRITING_ROMAN = ('translit',)
+'''romanlized writing system. only valid for some langauges, otherwise it outputs empty string'''
 
-KIND_NATIVE_AND_ROMAN = KIND_NATIVE + KIND_ROMAN
+WRITING_NATIVE_AND_ROMAN = WRITING_NATIVE + WRITING_ROMAN
+'''both native and roman writing. The output will be a tuple'''
 
 class Goslate(object):
     '''All goslate API lives in this class
 
     You have to first create an instance of Goslate to use this API
 
-    :param kind: The translation output kind. Currently 3 values are valid
-                 - KIND_NATIVE: output in native target language format
-                 - KIND_ROMAN: output in romanlized target language, only valid for some langauges. E.g.: Pinyin for Chinese
-                 - KIND_NATIVE_AND_ROMAN: output both native and roman translation, the output of will be a tuple
+    :param writing: The translation writing system. Currently 3 values are valid
+    
+                 - :const:`WRITING_NATIVE` for native writing system
+                 - :const:`WRITING_ROMAN` for roman writing system
+                 - :const:`WRITING_NATIVE_AND_ROMAN` for both native and roman writing system. output will be a tuple in this case
     
     :param opener: The url opener to be used for HTTP/HTTPS query.
                    If not provide, a default opener will be used.
@@ -89,13 +100,6 @@ class Goslate(object):
     :param retry_times: how many times to retry when connection reset error occured. Default to 4
     :type retry_times: int
         
-    :param executor: the multi thread executor for handling batch input, default to a global ``futures.ThreadPoolExecutor`` instance with 120 max thead workers if ``futures`` is avalible. Set to None to disable multi thread support
-    
-    .. note:: multi thread worker relys on `futures <https://pypi.python.org/pypi/futures>`_, if it is not avalible, ``goslate`` will work under single thread mode
-
-    :type executor: ``futures.ThreadPoolExecutor``
-    
-          
     :type max_workers: int
 
     :param timeout: HTTP request timeout in seconds
@@ -104,6 +108,14 @@ class Goslate(object):
     :param debug: Turn on/off the debug output
     :type debug: bool
 
+    :param service_urls: google translate url list. URLs will be used randomly for better concurrent performance. For example ``['http://translate.google.com', 'http://translate.google.de']``
+    :type service_urls: single string or a sequence of strings
+    
+    :param executor: the multi thread executor for handling batch input, default to a global ``futures.ThreadPoolExecutor`` instance with 120 max thead workers if ``futures`` is avalible. Set to None to disable multi thread support
+    :type executor: ``futures.ThreadPoolExecutor``
+    
+    .. note:: multi thread worker relys on `futures <https://pypi.python.org/pypi/futures>`_, if it is not avalible, ``goslate`` will work under single thread mode
+    
     :Example:
 
         >>> import goslate
@@ -116,22 +128,23 @@ class Goslate(object):
         >>> print(languages['en'])
         English
         >>>
-        >>> # Tranlate the languages' name into Chinese
-        >>> language_names = languages.values()
-        >>> language_names_in_chinese = gs.translate(language_names, 'zh')
-        >>> 
-        >>> # verify each Chinese name is really in Chinese using detect
-        >>> language_codes = gs.detect(language_names_in_chinese)
-        >>> for code in language_codes:
-        ...     assert 'zh-CN' == code
-        ...
-        >>>
+        >>> # Tranlate English into German
+        >>> print(gs.translate('hello', 'de'))
+        Hallo
+        >>> # Detect the language of the text
+        >>> print(gs.detect('some English words'))
+        en
+        >>> # Get romanlized translation (romanlization)
+        >>> gs_roman = goslate.Goslate(WRITING_ROMAN)
+        >>> print(gs_roman.translate('hello', 'zh'))
+        Nǐ hǎo
     '''
 
     
     _MAX_LENGTH_PER_QUERY = 1800
 
-    def __init__(self, kind=KIND_NATIVE, opener=None, retry_times=4, executor=_g_executor, timeout=4, debug=False):
+    def __init__(self, writing=WRITING_NATIVE, opener=None, retry_times=4, executor=_g_executor,
+                 timeout=4, service_urls=('http://translate.google.com',), debug=False):
         self._DEBUG = debug
         self._MIN_TASKS_FOR_CONCURRENT = 2
         self._opener = opener
@@ -145,7 +158,11 @@ class Goslate(object):
         
         self._RETRY_TIMES = retry_times
         self._executor = executor
-        self._kind = kind
+        self._writing = writing
+        if _is_sequence(service_urls):
+            self._service_urls = service_urls
+        else:
+            self._service_urls = (service_urls,)
 
     def _open_url(self, url):
         if len(url) > self._MAX_LENGTH_PER_QUERY+100:
@@ -202,12 +219,13 @@ class Goslate(object):
             raise Error('invalid target language')
 
         if not text.strip():
-            return tuple(u'' for i in range(len(self._kind))) , unicode(target_language)
+            return tuple(u'' for i in range(len(self._writing))) , unicode(target_language)
 
         # Browser request for 'hello world' is:
         # http://translate.google.com/translate_a/t?client=t&hl=en&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&multires=1&prev=conf&psl=en&ptl=en&otf=1&it=sel.2016&ssel=0&tsel=0&prev=enter&oc=3&ssel=0&tsel=0&sc=1&text=hello%20world
 
-        GOOGLE_TRASLATE_URL = 'http://translate.google.com/translate_a/t'
+        # TODO: we could randomly choose one of the google domain URLs for concurrent support
+        GOOGLE_TRASLATE_URL = urljoin(random.choice(self._service_urls), '/translate_a/t')
         GOOGLE_TRASLATE_PARAMETERS = {
             # 't' client will receiver non-standard json format
             # change client to something other than 't' to get standard json response
@@ -224,7 +242,7 @@ class Goslate(object):
         data = json.loads(response_content)
         
         # google may change space to no-break space, we may need to change it back
-        translation = tuple(u''.join(i[part] for i in data['sentences']).replace(u'\xA0', u' ') for part in self._kind)
+        translation = tuple(u''.join(i[part] for i in data['sentences']).replace(u'\xA0', u' ') for part in self._writing)
         
         detected_source_language = data['src']
         return translation, detected_source_language
@@ -297,7 +315,7 @@ class Goslate(object):
             return lambda: self._basic_translate(text, target_language, source_lauguage)[0]
 
         results = list(self._execute(make_task(i) for i in split_text(text)))
-        return tuple(''.join(i[n] for i in results) for n in range(len(self._kind)))
+        return tuple(''.join(i[n] for i in results) for n in range(len(self._writing)))
 
 
     def translate(self, text, target_language, source_language=''):
@@ -326,7 +344,7 @@ class Goslate(object):
         
           - unicode: on single string input
           - generator of unicode: on batch input of string sequence
-          - tuple: if KIND_NATIVE_AND_ROMAN is specified, it will return tuple/generator for tuple (u"native", u"roman format")
+          - tuple: if WRITING_NATIVE_AND_ROMAN is specified, it will return tuple/generator for tuple (u"native", u"roman format")
 
         :raises:
          - :class:`Error` ('invalid target language') if target language is not set
@@ -349,7 +367,7 @@ class Goslate(object):
 
         :Example:
         
-         >>> gs_roman = Goslate(KIND_ROMAN)
+         >>> gs_roman = Goslate(WRITING_ROMAN)
          >>> print(gs_roman.translate('Hello', 'zh'))
          Nǐ hǎo
         
@@ -396,7 +414,7 @@ class Goslate(object):
             def task():
                 r = self._translate_single_text(text, target_language, source_language)
                 r = tuple([i.strip('\n') for i in n.split(JOINT)] for n in r)
-                return itertools.izip(*r)
+                return izip(*r)
                 # return r[0]
             return task
                 
@@ -461,7 +479,7 @@ def _main(argv):
     parser.add_option('-o', '--output-encoding', default=sys.getfilesystemencoding(), metavar='utf-8',
                       help='specify output encoding, default to current console system encoding')
     parser.add_option('-r', '--roman', action="store_true",
-                      help='change translation kind to roman (e.g.: output pinyin instead of Chinese charactors for Chinese. It only valid for some of the target languages)')
+                      help='change translation writing to roman (e.g.: output pinyin instead of Chinese charactors for Chinese. It only valid for some of the target languages)')
 
     
     options, args = parser.parse_args(argv[1:])
@@ -471,11 +489,11 @@ def _main(argv):
         parser.print_help()
         return
     
-    kind = KIND_NATIVE
+    writing = WRITING_NATIVE
     if options.roman:
-        kind = KIND_ROMAN
+        writing = WRITING_ROMAN
     
-    gs = Goslate(kind=kind)
+    gs = Goslate(writing=writing)
     import fileinput
     # inputs = fileinput.input(args, mode='rU', openhook=fileinput.hook_encoded(options.input_encoding))
     inputs = fileinput.input(args, mode='rb')
