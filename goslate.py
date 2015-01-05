@@ -277,7 +277,7 @@ class Goslate(object):
 
         url = '?'.join((GOOGLE_TRASLATOR_URL, urlencode(GOOGLE_TRASLATOR_PARAMETERS)))
         response_content = self._open_url(url)
-        data = json.loads(response_content[1:-1])
+        data = json.loads(response_content)
 
         languages = data['sl']
         languages.update(data['tl'])
