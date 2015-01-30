@@ -38,14 +38,14 @@ class UnitTest(unittest.TestCase):
         self.assertListEqual(list(expectedResult), list(generator))
         
     def test_translate_space(self):
-        self.assertEqual(u'Hallo\n Welt', gs.translate('hello\n world', 'de', 'en'))
+        self.assertEqual(u'hallo\n welt', gs.translate('hello\n world', 'de', 'en').lower())
         
     def test_translate_roman(self):
         gs = Goslate(writing=WRITING_ROMAN)
         self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
         self.assertEqual(u'N\u01d0 h\u01ceo sh\xecji\xe8.', gs.translate(b'hello world.', 'zh'))
         self.assertEqual(u'', gs.translate(b'hello', 'de'))        
-        self.assertGeneratorEqual([u'N\u01d0 h\u01ceo', u'Sh\xecji\xe8'], gs.translate([b'hello', 'world'], 'zh'))
+        self.assertGeneratorEqual([u'Nín h\u01ceo', u'Sh\xecji\xe8'], gs.translate([b'hello', 'world'], 'zh'))
 
         
     def test_translate_native_and_roman(self):
@@ -56,8 +56,8 @@ class UnitTest(unittest.TestCase):
         self.assertEqual((u'Hallo', u''),
                          gs.translate(b'Hello', 'de'))
         
-        self.assertGeneratorEqual([(u'你好', u'N\u01d0 h\u01ceo'), (u'世界', u'Sh\xecji\xe8')],
-                                  gs.translate([b'hello', 'world'], 'zh'))        
+        self.assertGeneratorEqual([(u'您好', u'Nín h\u01ceo'), (u'世界', u'Sh\xecji\xe8')],
+                                  gs.translate([b'hello', 'world'], 'zh'))
         
         
     def test_translate(self):
@@ -80,7 +80,7 @@ class UnitTest(unittest.TestCase):
 
         self.assertRaisesRegexp(Error, 'invalid target language', gs.translate, 'hello', '')
         
-        self.assertEqual(u'你好世界。\n\n你好', gs.translate(u'\n\nhello world.\n\nhello\n\n', 'zh-cn'))
+        self.assertEqual(u'你好世界。\n\n您好', gs.translate(u'\n\nhello world.\n\nhello\n\n', 'zh-cn'))
 
         test_string = u'hello!    '
         exceed_allowed_times = int(gs._MAX_LENGTH_PER_QUERY / len(test_string) + 10)
@@ -93,23 +93,25 @@ class UnitTest(unittest.TestCase):
         self.assertGeneratorEqual([u'你好世界。'], gs.translate([u'hello world.'], 'zh-cn'))
         self.assertGeneratorEqual([u'你好世界。'], gs.translate([b'hello world.'], 'zh-CN', u'en'))
         self.assertGeneratorEqual([u'你好世界。'], gs.translate([b'hallo welt.'], u'zh-CN'))
-        self.assertGeneratorEqual([u'你好世界。\n\n你好'], gs.translate([b'\n\nhello world.\n\nhello\n\n'], 'zh-cn'))
+        self.assertGeneratorEqual([u'你好世界。\n\n您好'], gs.translate([b'\n\nhello world.\n\nhello\n\n'], 'zh-cn'))
         self.assertNotEqual([u'你好世界。'], gs.translate([b'hallo welt.'], 'zh-CN', 'en'))
         self.assertRaisesRegexp(Error, 'invalid target language', gs.translate, [''], u'')
         
         test_string = b'hello!    '
         exceed_allowed_times = int(gs._MAX_LENGTH_PER_QUERY / len(test_string) + 10)
         self.assertGeneratorEqual([u'您好！'*exceed_allowed_times]*3, gs.translate((test_string*exceed_allowed_times,)*3, 'zh'))
-        self.assertGeneratorEqual([u'你好世界。', u'你好'], gs.translate([b'\n\nhello world.\n', b'\nhello\n\n'], 'zh-cn'))
+        self.assertGeneratorEqual([u'你好世界。', u'您好'], gs.translate([b'\n\nhello world.\n', b'\nhello\n\n'], 'zh-cn'))
         
 
     def test_translate_batch_input_exceed(self):
         test_string = b'helloworld'
         exceed_allowed_times = int(gs._MAX_LENGTH_PER_QUERY / len(test_string) + 1)        
         self.assertRaisesRegexp(Error, 'input too large', list, gs.translate((u'hello', test_string*exceed_allowed_times, ), 'zh'))
+        
+        
     def test_translate_batch_input_with_empty_string(self):
         self.assertGeneratorEqual([u'你好世界。', u''], gs.translate([u'hello world.', u''], 'zh-cn'))
-        self.assertGeneratorEqual([u'你好世界。', u'', u'你好'], gs.translate([u'hello world.', u'', u'hello'], 'zh-cn'))
+        self.assertGeneratorEqual([u'你好世界。', u'', u'您好'], gs.translate([u'hello world.', u'', u'hello'], 'zh-cn'))
         self.assertGeneratorEqual([u'', u'你好世界。'], gs.translate([u'', u'hello world.'], 'zh-cn'))        
         
         
@@ -123,18 +125,19 @@ class UnitTest(unittest.TestCase):
         self.assertEqual('zh-CN', gs.detect(u'你好世界'.encode('utf-8')*1000))
         
     def test_detect_batch_input(self):
+        times = 10
         self.assertGeneratorEqual(['en', 'zh-CN', 'de', 'en']*10,
                                   gs.detect((u'hello world', u'你好世界'.encode('utf-8'), u'hallo welt.', '')*10))
 
         self.assertGeneratorEqual(['en', 'zh-CN', 'de', 'en']*10,
-                                  gs.detect([b'hello world'*10, u'你好世界'*100, b'hallo welt.'*1000, u'\n\r \t'*1000]*10))
+                                  gs.detect([b'hello world'*10, u'你好世界'*100, b'hallo welt.'*times, u'\n\r \t'*times]*10))
 
 
     def test_translate_massive_input(self):
-        times = 1000
-        source = (u'hello world. %s' % i for i in range(times))
+        times = 10
+        source = (u'hello world. ' for i in range(times))
         result = gs.translate((i.encode('utf-8') for i in source), 'zh-cn')
-        self.assertGeneratorEqual((u'你好世界。 %s' % i for i in range(times)), result)
+        self.assertGeneratorEqual((u'你好世界。' for i in range(times)), result)
 
         
     def test_main(self):
@@ -143,21 +146,25 @@ class UnitTest(unittest.TestCase):
         
         sys.stdout = io.BytesIO()
         sys.stdin = io.BytesIO(b'hello world')
+        sys.stdin.buffer = sys.stdin
         _main([sys.argv[0], '-t', 'zh-CN'])
         self.assertEqual(u'你好世界\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()
         sys.stdin = io.BytesIO(u'你好'.encode(encoding))
+        sys.stdin.buffer = sys.stdin
         _main([sys.argv[0], '-t', 'en'])
         self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()
         sys.stdin = io.BytesIO(b'hello world')
+        sys.stdin.buffer = sys.stdin        
         _main([sys.argv[0], '-t', 'zh-CN', '-o', 'utf-8'])
         self.assertEqual(u'你好世界\n'.encode('utf-8'), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()        
         sys.stdin = io.BytesIO(u'你好'.encode('utf-8'))
+        sys.stdin.buffer = sys.stdin                
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8'])
         self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
         

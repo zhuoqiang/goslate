@@ -77,6 +77,15 @@ How to Contribute
 What's New
 ============
 
+1.3.1
+----------
+
+* [fix bug] fix compatible issue with latest google translation service json format changes
+
+* [fix bug] unit test failure
+
+
+
 1.3.0
 ---------
 
