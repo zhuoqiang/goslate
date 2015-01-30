@@ -40,7 +40,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 3, 0)
+__version_info__ = (1, 3, 1)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -130,14 +130,14 @@ class Goslate(object):
         >>> 
         >>> # Tranlate English into German
         >>> print(gs.translate('hello', 'de'))
-        Hallo
+        hallo
         >>> # Detect the language of the text
         >>> print(gs.detect('some English words'))
         en
         >>> # Get goslate object dedicated for romanlized translation (romanlization)
         >>> gs_roman = goslate.Goslate(WRITING_ROMAN)
         >>> print(gs_roman.translate('hello', 'zh'))
-        Nǐ hǎo
+        Nín hǎo
     '''
 
     
@@ -369,7 +369,7 @@ class Goslate(object):
         
          >>> gs_roman = Goslate(WRITING_ROMAN)
          >>> print(gs_roman.translate('Hello', 'zh'))
-         Nǐ hǎo
+         Nín hǎo
         
         '''
 
