@@ -77,7 +77,7 @@ How to Contribute
 What's New
 ============
 
-1.3.1
+1.3.2
 ----------
 
 * [fix bug] fix compatible issue with latest google translation service json format changes
