@@ -43,9 +43,9 @@ class UnitTest(unittest.TestCase):
     def test_translate_roman(self):
         gs = Goslate(writing=WRITING_ROMAN)
         self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
-        self.assertEqual(u'N\u01d0 h\u01ceo sh\xecji\xe8.', gs.translate(b'hello world.', 'zh'))
-        self.assertEqual(u'', gs.translate(b'hello', 'de'))        
-        self.assertGeneratorEqual([u'Nín h\u01ceo', u'Sh\xecji\xe8'], gs.translate([b'hello', 'world'], 'zh'))
+        self.assertEqual(u'N\u01d0 h\u01ceo sh\xecji\xe8.'.lower(), gs.translate(b'hello world.', 'zh').lower())
+        self.assertEqual(u'heˈlō,həˈlō', gs.translate(b'hello', 'de'))        
+        self.assertGeneratorEqual([u'Nín h\u01ceo', u'sh\xecji\xe8'], gs.translate([b'hello', 'world'], 'zh'))
 
         
     def test_translate_native_and_roman(self):
@@ -56,7 +56,7 @@ class UnitTest(unittest.TestCase):
         self.assertEqual((u'Hallo', u''),
                          gs.translate(b'Hello', 'de'))
         
-        self.assertGeneratorEqual([(u'您好', u'Nín h\u01ceo'), (u'世界', u'Sh\xecji\xe8')],
+        self.assertGeneratorEqual([(u'您好', u'Nín h\u01ceo'), (u'世界', u'sh\xecji\xe8')],
                                   gs.translate([b'hello', 'world'], 'zh'))
         
         
