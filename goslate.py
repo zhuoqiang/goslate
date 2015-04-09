@@ -14,6 +14,7 @@ import functools
 import time
 import socket
 import random
+import re
 
 try:
     # python 3
@@ -40,7 +41,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 3, 2)
+__version_info__ = (1, 4, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -71,6 +72,8 @@ class Error(Exception):
     '''
     pass
 
+
+_empty_comma = re.compile(r',(?=,)')
 
 WRITING_NATIVE = ('trans',)
 '''native target language writing system'''
@@ -178,7 +181,7 @@ class Goslate(object):
                 response = self._opener.open(request, timeout=self._TIMEOUT)
                 response_content = response.read().decode('utf-8')
                 if self._DEBUG:
-                    print(response_content)
+                    print('GET Response body:{}'.format(response_content))
                 return response_content
             except socket.error as e:
                 if self._DEBUG:
@@ -223,26 +226,40 @@ class Goslate(object):
 
         # Browser request for 'hello world' is:
         # http://translate.google.com/translate_a/t?client=t&hl=en&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&multires=1&prev=conf&psl=en&ptl=en&otf=1&it=sel.2016&ssel=0&tsel=0&prev=enter&oc=3&ssel=0&tsel=0&sc=1&text=hello%20world
+        
+        # 2015-04: google had changed service, it is now:
+        # https://translate.google.com/translate_a/single?client=z&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&dt=t&dt=rm&q=hello%20world
+        # dt=t: translate
+        # dt=rm: romanlized writing, like Chinese Pinyin
 
         # TODO: we could randomly choose one of the google domain URLs for concurrent support
-        GOOGLE_TRASLATE_URL = urljoin(random.choice(self._service_urls), '/translate_a/t')
+        GOOGLE_TRASLATE_URL = urljoin(random.choice(self._service_urls), '/translate_a/single')
         GOOGLE_TRASLATE_PARAMETERS = {
-            # 't' client will receiver non-standard json format
-            # change client to something other than 't' to get standard json response
-            'client': 'z',
+            'client': 'a',
             'sl': source_language,
             'tl': target_language,
             'ie': 'UTF-8',
             'oe': 'UTF-8',
-            'text': text
+            'dt': 't',
+            'q': text,
             }
 
         url = '?'.join((GOOGLE_TRASLATE_URL, urlencode(GOOGLE_TRASLATE_PARAMETERS)))
-        response_content = self._open_url(url)
-        data = json.loads(response_content)
+        if 'translit' in self._writing:
+            url += '&dt=rm'
         
-        # google may change space to no-break space, we may need to change it back
-        translation = tuple(u''.join(i[part] for i in data['sentences']).replace(u'\xA0', u' ') for part in self._writing)
+        response_content = self._open_url(url)
+        raw_data = json.loads(_empty_comma.subn('', response_content)[0].replace(u'\xA0', u' ').replace('[,', '[1,'))
+        data = {'src': raw_data[-1][0][0]}
+        
+        if raw_data[0][-1][0] == 1: # roman writing
+            data['translit'] = raw_data[0][-1][1]
+            data['trans'] = u''.join(i[0] for i in raw_data[0][:-1])
+        else:
+            data['translit'] = u''
+            data['trans'] = u''.join(i[0] for i in raw_data[0])
+            
+        translation = tuple(data[part] for part in self._writing)
         
         detected_source_language = data['src']
         return translation, detected_source_language
@@ -318,7 +335,7 @@ class Goslate(object):
         return tuple(''.join(i[n] for i in results) for n in range(len(self._writing)))
 
 
-    def translate(self, text, target_language, source_language=''):
+    def translate(self, text, target_language, source_language='auto'):
         '''Translate text from source language to target language
 
         .. note::
@@ -360,7 +377,7 @@ class Goslate(object):
          >>> for i in gs.translate(['good', u'morning'], 'de'):
          ...     print(i)
          ...
-         gut
+         gut aus
          Morgen
 
         To output romanlized translation
@@ -377,6 +394,9 @@ class Goslate(object):
         if not target_language:
             raise Error('invalid target language')
 
+        if not source_language:
+            source_language = 'auto'
+        
         if target_language.lower() == 'zh':
             target_language = 'zh-CN'
             
@@ -425,7 +445,7 @@ class Goslate(object):
     def _detect_language(self, text):
         if _is_bytes(text):
             text = text.decode('utf-8')
-        return self._basic_translate(text[:50].encode('utf-8'), 'en', '')[1]
+        return self._basic_translate(text[:50].encode('utf-8'), 'en', 'auto')[1]
 
 
     def detect(self, text):
@@ -472,7 +492,7 @@ def _main(argv):
     parser = optparse.OptionParser(usage=usage, version="%%prog %s @ Copyright %s" % (__version__, __copyright__))
     parser.add_option('-t', '--target-language', metavar='zh-CN',
                       help='specify target language to translate the source text into')
-    parser.add_option('-s', '--source-language', default='', metavar='en',
+    parser.add_option('-s', '--source-language', default='auto', metavar='en',
                       help='specify source language, if not provide it will identify the source language automatically')
     parser.add_option('-i', '--input-encoding', default=sys.getfilesystemencoding(), metavar='utf-8',
                       help='specify input encoding, default to current console system encoding')
