@@ -77,6 +77,12 @@ How to Contribute
 What's New
 ============
 
+1.4.0
+----------
+
+* [fix bug] update to adapt latest google translation service changes
+
+
 1.3.2
 ----------
 
