@@ -104,4 +104,3 @@ What's New
 * [fix bug] Google translation may change normal space to no-break space
 
 * [fix bug] Google web API changed for getting supported language list
-  
