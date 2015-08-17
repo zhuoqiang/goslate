@@ -151,10 +151,10 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(u'你好世界\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()
-        sys.stdin = io.BytesIO(u'你好'.encode(encoding))
+        sys.stdin = io.BytesIO(u'苹果'.encode(encoding))
         sys.stdin.buffer = sys.stdin
         _main([sys.argv[0], '-t', 'en'])
-        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'Apple\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()
         sys.stdin = io.BytesIO(b'hello world')
@@ -163,10 +163,10 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(u'你好世界\n'.encode('utf-8'), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()        
-        sys.stdin = io.BytesIO(u'你好'.encode('utf-8'))
+        sys.stdin = io.BytesIO(u'苹果'.encode('utf-8'))
         sys.stdin.buffer = sys.stdin                
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8'])
-        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'Apple\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()        
         with open('for_test.tmp', 'w') as f:
@@ -182,24 +182,24 @@ class UnitTest(unittest.TestCase):
         
         sys.stdout = io.BytesIO()
         with io.open('for_test.tmp', 'w', encoding=encoding) as f:
-            f.write(u'你好')
+            f.write(u'苹果')
         _main([sys.argv[0], '-t', 'en', f.name])
-        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'Apple\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()
         with io.open('for_test.tmp', 'w', encoding='utf-8') as f:
-            f.write(u'你好')
+            f.write(u'苹果')
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8', f.name])
-        self.assertEqual(u'Hello\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'Apple\n'.encode(encoding), sys.stdout.getvalue())
 
         sys.stdout = io.BytesIO()        
         with io.open('for_test.tmp', 'w', encoding='utf-8') as f:
-            f.write(u'你好')
+            f.write(u'苹果')
         with io.open('for_test_2.tmp', 'w', encoding='utf-8') as f2:
             f2.write(u'世界')
             
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8', f.name, f2.name])
-        self.assertEqual(u'Hello\nWorld\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'Apple\nWorld\n'.encode(encoding), sys.stdout.getvalue())
         
 
     def test_get_languages(self):
