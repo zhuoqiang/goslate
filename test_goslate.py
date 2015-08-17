@@ -60,6 +60,14 @@ class UnitTest(unittest.TestCase):
                                   gs.translate([b'hello', 'world'], 'zh'))
         
         
+    def test_lookup_dictionary(self):
+        r = gs.lookup_dictionary('apple', 'zh')
+        self.assertTrue(isinstance(r, list))
+        self.assertEqual(r[0][0][0], u'苹果')
+        self.assertEqual(r[1][0][0], u'noun')
+        self.assertEqual(r[1][0][0], u'noun')        
+        self.assertEqual(r[1][0][1][0], u'苹果')
+        
     def test_translate(self):
         self.assertEqual(u'', gs.translate(b'\n \n\t\n', 'en'))
         
