@@ -41,7 +41,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.me"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 4, 0)
+__version_info__ = (1, 5, 0)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://bitbucket.org/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -484,6 +484,98 @@ class Goslate(object):
         return self._detect_language(text)
 
 
+    def lookup_dictionary(
+            self, text, target_language, source_language='auto',
+            examples=False, 
+            etymology=False,
+            pronunciation=False,
+            related_words=False,
+            synonyms=False,
+            antonyms=False,
+            output_language=None):
+        '''Lookup detail meaning for single word/phrase
+
+        .. note::
+        
+         - Do not input sequence of texts
+
+        :param text: The source word/phrase(s) you want to lookup.
+        :type text: UTF-8 str
+        
+        :param target_language: The language to translate the source text into.
+         The value should be one of the language codes listed in :func:`get_languages`
+        :type target_language: str; unicode
+
+        :param source_language: The language of the source text.
+                                The value should be one of the language codes listed in :func:`get_languages`.
+                                If a language is not specified,
+                                the system will attempt to identify the source language automatically.
+        :type source_language: str; unicode
+        
+        :param examples: include example sentences or not
+        :param pronunciation: include pronunciation in roman writing or not
+        :param related_words: include related words or not
+        :param output_language: the dictionary's own language, default to English.
+        
+        :returns: a complex list structure contains multiple translation meanings for this word/phrase and detail explaination.
+        '''
+
+        if not target_language:
+            raise Error('invalid target language')
+
+        if not text.strip():
+            return tuple(u'' for i in range(len(self._writing))) , unicode(target_language)
+
+        # Browser request for 'hello world' is:
+        # http://translate.google.com/translate_a/t?client=t&hl=en&sl=en&tl=zh-CN&ie=UTF-8&oe=UTF-8&multires=1&prev=conf&psl=en&ptl=en&otf=1&it=sel.2016&ssel=0&tsel=0&prev=enter&oc=3&ssel=0&tsel=0&sc=1&text=hello%20world
+        
+        # TODO: we could randomly choose one of the google domain URLs for concurrent support
+        GOOGLE_TRASLATE_URL = urljoin(random.choice(self._service_urls), '/translate_a/single')
+        parameters = [
+            ('client', 'a'),
+            ('sl', source_language),
+            ('tl', target_language),
+            ('ie', 'UTF-8'),
+            ('oe', 'UTF-8'),
+            ('dt', 't'),
+            ('q', text),
+            
+            ('dt', 'bd'), # dictionry
+        ]
+            
+        if output_language:
+            parameters.append(('hl', output_language))
+        if examples:
+            parameters.append(('dt', 'ex'))
+        if related_words:
+            parameters.append(('dt', 'rw'))
+        if pronunciation:
+            parameters.append(('dt', 'rm'))
+        if synonyms:
+            parameters.append(('dt', 'ss'))
+        if antonyms:
+            parameters.append(('dt', 'at'))
+            
+        # ('dt', 'ld'), # possibility ?
+        # ('dt', 'md'), # long definiation
+        # ('dt', 'qca'), # possiblility?
+        # 'otf': '1', # ?
+        # ('ssel': '1'), # ?
+        # ('tsel', '1'), # ?
+        # 'kc': '6', # ?
+        # 'tk': 522243|913459, #?
+
+        # if source_pronunciation:
+        #     parameters.append(('srcrom', '1'))
+        
+        url = '?'.join((GOOGLE_TRASLATE_URL, urlencode(parameters)))
+        # print(url)
+
+        response_content = self._open_url(url)
+        raw_data = json.loads(_empty_comma.subn('', response_content)[0].replace(u'\xA0', u' ').replace('[,', '[1,'))
+        return raw_data
+    
+    
 def _main(argv):
     import optparse
 
