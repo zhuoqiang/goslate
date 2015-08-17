@@ -44,7 +44,7 @@ or just download `latest goslate.py <https://bitbucket.org/zhuoqiang/goslate/raw
 Proxy Support
 ===============
 
-You could add proxy support as following sample:
+Proxy support could be added as following:
 
 .. sourcecode:: python
 
@@ -52,7 +52,9 @@ You could add proxy support as following sample:
  import goslate
 
  proxy_handler = urllib2.ProxyHandler({"http" : "http://proxy-domain.name:8080"})
- proxy_opener = urllib2.build_opener(urllib2.HTTPHandler(proxy_handler), urllib2.HTTPSHandler(proxy_handler))
+ proxy_opener = urllib2.build_opener(urllib2.HTTPHandler(proxy_handler), 
+                                     urllib2.HTTPSHandler(proxy_handler))
+                                     
  gs_with_proxy = goslate.Goslate(opener=proxy_opener)
  translation = gs_with_proxy.translate("hello world", "de")
  
@@ -60,9 +62,9 @@ You could add proxy support as following sample:
 Romanlization
 ====================
 
-Romanization or latinization (or romanisation, latinisation: see spelling differences), in linguistics, is the conversion of writing from a different writing system to the Roman (Latin) script, or a system for doing so.
+Romanization or latinization (or romanisation, latinisation), in linguistics, is the conversion of writing from a different writing system to the Roman (Latin) script, or a system for doing so.
 
-For example, pinyin is the default romanlization method for Chinese charactor.
+For example, pinyin is the default romanlization method for Chinese language.
 
 You could get translation in romanlized writing as following:
 
@@ -84,7 +86,7 @@ You could also get translation in both native writing system and ramon writing s
  ('中国', 'Zhōngguó')
 
  
-You could see the result will be a tuple ``(Translation-in-Native-Writing, Translation-in-Roman-Writing)``
+You could see the result will be a tuple in this case: ``(Translation-in-Native-Writing, Translation-in-Roman-Writing)``
 
 Language Detection
 ====================
@@ -105,7 +107,9 @@ Sometimes all you need is just find out which language the text is:
 Concurrent Querying 
 ====================
 
-It is not necessary to roll your own multi-thread solution to speed up massive translation. Goslate already done it for you. It utilize ``concurrent.futures`` for concurent querying. The default max worker number is 120 for goslate's internal query executor. You could change the number as following:
+It is not necessary to roll your own multi-thread solution to speed up massive translation. Goslate already done it for you. It utilizes ``concurrent.futures`` for concurent querying. The max worker number is 120 by default. 
+
+The worker number could be changed as following:
 
 .. sourcecode:: python
 
@@ -113,8 +117,9 @@ It is not necessary to roll your own multi-thread solution to speed up massive t
  >>> import concurrent.futures
  >>> executor = concurrent.futures.ThreadPoolExecutor(max_workers=200)
  >>> gs = goslate.Goslate(executor=executor)
- >>> gs.translate(['text1', 'text2', 'text3'])
- ('tranlation1', 'translation2', 'translation3')
+ >>> it = gs.translate(['text1', 'text2', 'text3'])
+ >>> list(it)
+ ['tranlation1', 'translation2', 'translation3']
 
  
 It is adviced to install ``concurrent.futures`` backport lib in python2.7 (python3 has it by default) to enable concurrent querying. 
@@ -126,7 +131,9 @@ The input could be list, tuple or any iterater, even the file object which itera
  >>> translated_lines = gs.translate(open('readme.txt'))
  >>> translation = '\n'.join(translated_lines)
 
-
+ 
+Do not worry about short texts will increase the query time. Internally, goslate will join small text into one big text to reduce the unnecessary query round trips.
+ 
  
 Batch Translation
 ====================
@@ -142,17 +149,14 @@ Google translation does not support very long text, goslate bypass this limitati
  >>> gs.translate(novel_text)
 
 
-Do not worry about multiple small translation will increase the query time. Internally, goslate will join small text into one big text to reduce the unnecessary querys.
- 
-
 Performance Consideration
 ================================
 
 Goslate use batch and concurrent fetch aggresivelly to achieve maximized translation speed internally.
 
-All you need to do is reducing API calling time by utilize batch tranlation and concurrent querying.
+All you need to do is reducing API calling times by utilize batch tranlation and concurrent querying.
 
-For example, instead of:
+For example, say if you want to translate 3 big text files. Instead of manually translate them one by one, line by line:
 
 .. sourcecode:: python
 
@@ -172,7 +176,7 @@ For example, instead of:
          translation.append('\n'.join(translated_lines))
  
          
-The following code is not only simpler but also much faster:
+It is better to leave them to Goslate totally. The following code is not only simpler but also much faster (+100x) :
 
 .. sourcecode:: python
 
@@ -181,7 +185,8 @@ The following code is not only simpler but also much faster:
  big_files = ['a.txt', 'b.txt', 'c.txt']
  gs = goslate.Goslate()
  
- translation = gs.translate(open(big_file, 'r').read() for big_file in big_files)
+ translation_iter = gs.translate(open(big_file, 'r').read() for big_file in big_files)
+ translation = list(translation_iter)
  
  
 Internally, goslate will first adjust the text to make them not so big that do not fit Google query API nor so small that increase the total HTTP querying times. Then it will use concurrent query to speed thing even further.
@@ -229,7 +234,7 @@ You could verify it by access google translation service in browser manully.
 
 You could try the following to overcome this issue:
 
-* query through a HTTP/SOCK5 proxy
+* query through a HTTP/SOCK5 proxy, see `Proxy Support`_
 
 * using another google domain for translation: ``gs = Goslate(service_urls=['http://translate.google.de'])``
 
