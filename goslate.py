@@ -132,8 +132,8 @@ class Goslate(object):
         English
         >>> 
         >>> # Tranlate English into German
-        >>> print(gs.translate('hello', 'de'))
-        hallo
+        >>> print(gs.translate('Hello', 'de'))
+        Hallo
         >>> # Detect the language of the text
         >>> print(gs.detect('some English words'))
         en
@@ -377,7 +377,7 @@ class Goslate(object):
          >>> for i in gs.translate(['good', u'morning'], 'de'):
          ...     print(i)
          ...
-         gut aus
+         gut
          Morgen
 
         To output romanlized translation
