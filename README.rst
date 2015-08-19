@@ -21,7 +21,7 @@ The basic usage is simple:
 
  >>> import goslate
  >>> gs = goslate.Goslate()
- >>> print gs.translate('hello world', 'de')
+ >>> print(gs.translate('hello world', 'de'))
  hallo welt
 
  
@@ -72,7 +72,7 @@ You could get translation in romanlized writing as following:
 
  >>> import goslate
  >>> roman_gs = goslate.Goslate(writing=goslate.WRITING_ROMAN)
- >>> print roman_gs.translate('China', 'zh')
+ >>> print(roman_gs.translate('China', 'zh'))
  Zhōngguó
   
 
@@ -82,7 +82,7 @@ You could also get translation in both native writing system and ramon writing s
 
  >>> import goslate                
  >>> gs = goslate.Goslate(writing=goslate.WRITING_NATIVE_AND_ROMAN)
- >>> print gs.translate('China', 'zh')
+ >>> print(gs.translate('China', 'zh'))
  ('中国', 'Zhōngguó')
 
  
@@ -98,9 +98,9 @@ Sometimes all you need is just find out which language the text is:
  >>> import golsate
  >>> gs = goslate.Goslate()
  >>> language_id = gs.detect('hallo welt')
- >>> print language_id
+ >>> print(language_id)
  'de'
- >>> print gs.get_languages()[language_id]
+ >>> print(gs.get_languages()[language_id])
  'German'
 
 
@@ -201,7 +201,7 @@ If you want detail dictionary explaination for a single word/phrase, you could
 
  >>> import goslate
  >>> gs = goslate.Goslate()
- >>> print gs.lookup_dictionary('sun', 'de')
+ >>> print(gs.lookup_dictionary('sun', 'de'))
  [[['Sonne', 'sun', 0]],
   [['noun',
     ['Sonne'],
