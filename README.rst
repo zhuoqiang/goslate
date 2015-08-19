@@ -82,7 +82,7 @@ You could also get translation in both native writing system and ramon writing s
 
  >>> import goslate                
  >>> gs = goslate.Goslate(writing=goslate.WRITING_NATIVE_AND_ROMAN)
- >>> print(gs.translate('China', 'zh'))
+ >>> gs.translate('China', 'zh')
  ('中国', 'Zhōngguó')
 
  
@@ -98,9 +98,9 @@ Sometimes all you need is just find out which language the text is:
  >>> import golsate
  >>> gs = goslate.Goslate()
  >>> language_id = gs.detect('hallo welt')
- >>> print(language_id)
+ >>> language_id
  'de'
- >>> print(gs.get_languages()[language_id])
+ >>> gs.get_languages()[language_id]
  'German'
 
 
@@ -201,7 +201,7 @@ If you want detail dictionary explaination for a single word/phrase, you could
 
  >>> import goslate
  >>> gs = goslate.Goslate()
- >>> print(gs.lookup_dictionary('sun', 'de'))
+ >>> gs.lookup_dictionary('sun', 'de')
  [[['Sonne', 'sun', 0]],
   [['noun',
     ['Sonne'],
@@ -216,7 +216,6 @@ If you want detail dictionary explaination for a single word/phrase, you could
   'en',
   0.9447732,
   [['en'], [0.9447732]]]
-
 
 There are 2 limitaion for this API:
 
