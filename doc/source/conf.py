@@ -23,7 +23,7 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ---------------------------------------------------
 
-# html_theme = 'haiku'
+html_theme = 'classic'
 html_theme_options = {'collapsiblesidebar':True}
 #html_theme_path = []
 # "<project> v<release> documentation".
