@@ -1,6 +1,11 @@
 Goslate: Free Google Translate API
 ##################################################
 
+.. note::
+   Google has updated its translation service recently with a ticket mechanism to prevent simple crawler program like ``goslate`` from accessing.
+   Though a more sophisticated crawler may still work technically, however it would have crossed the fine line between using the service and breaking the service.
+   ``goslate`` will not be updated to break google's ticket mechanism. Free lunch is over. Thanks for using.
+
 .. contents:: :local:
 
 ``goslate`` provides you *free* python API to google translation service by querying google translation website.
