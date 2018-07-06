@@ -100,7 +100,7 @@ Sometimes all you need is just find out which language the text is:
 
 .. sourcecode:: python
 
- >>> import golsate
+ >>> import goslate
  >>> gs = goslate.Goslate()
  >>> language_id = gs.detect('hallo welt')
  >>> language_id
@@ -118,7 +118,7 @@ The worker number could be changed as following:
 
 .. sourcecode:: python
 
- >>> import golsate
+ >>> import goslate
  >>> import concurrent.futures
  >>> executor = concurrent.futures.ThreadPoolExecutor(max_workers=200)
  >>> gs = goslate.Goslate(executor=executor)
@@ -147,7 +147,7 @@ Google translation does not support very long text, goslate bypass this limitati
 
 .. sourcecode:: python
 
- >>> import golsate
+ >>> import goslate
  >>> with open('the game of thrones.txt', 'r') as f:
  >>>     novel_text = f.read()
  >>> gs = goslate.Goslate()
@@ -165,7 +165,7 @@ For example, say if you want to translate 3 big text files. Instead of manually 
 
 .. sourcecode:: python
 
- import golsate
+ import goslate
  
  big_files = ['a.txt', 'b.txt', 'c.txt']
  gs = goslate.Goslate()
@@ -185,7 +185,7 @@ It is better to leave them to Goslate totally. The following code is not only si
 
 .. sourcecode:: python
 
- import golsate
+ import goslate
  
  big_files = ['a.txt', 'b.txt', 'c.txt']
  gs = goslate.Goslate()
