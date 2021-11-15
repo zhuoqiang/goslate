@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Goslate: Free Google Translate API
-'''
+'''Goslate: Free Google Translate API'''
 from __future__ import print_function
 from __future__ import unicode_literals
 
@@ -68,8 +67,7 @@ def _unwrapper_single_element(elements):
         
     
 class Error(Exception):
-    '''Error type
-    '''
+    '''Error type'''
     pass
 
 

@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Unit test for goslate module
-'''
+'''Unit test for goslate module'''
 
 from __future__ import unicode_literals
 import sys
