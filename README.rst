@@ -286,6 +286,12 @@ How to Contribute
 What's New
 ============
 
+1.5.2
+----------
+
+* [fix bug] removes newlines from descriptions to avoid installation failure
+
+
 1.5.0
 ----------
 

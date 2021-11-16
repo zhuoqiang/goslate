@@ -37,12 +37,12 @@ except ImportError:
 
 __author__ = 'ZHUO Qiang'
 __email__ = 'zhuo.qiang@gmail.com'
-__copyright__ = "2013, http://zhuoqiang.me"
+__copyright__ = "2013, http://zhuoqiang.github.io/"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 5, 1)
+__version_info__ = (1, 5, 2)
 __version__ = '.'.join(str(i) for i in __version_info__)
-__home__ = 'https://bitbucket.org/zhuoqiang/goslate'
+__home__ = 'https://github.com/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
 
 
