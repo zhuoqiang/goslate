@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Setup script for goslate
-'''
+'''Setup script for goslate'''
 
 import os
 import goslate as module
