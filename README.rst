@@ -2,8 +2,8 @@ Goslate: Free Google Translate API
 ##################################################
 
 .. note::
-   Google has updated its translation service recently with a ticket mechanism to prevent simple crawler program like ``goslate`` from accessing.
-   Though a more sophisticated crawler may still work technically, however it would have crossed the fine line between using the service and breaking the service.
+   Google has updated its translation service recently with a ticket mechanism to prevent simple crawler programs like ``goslate`` from accessing.
+   Though a more sophisticated crawler may still work technically, it would have crossed the fine line between using the service and breaking the service.
    ``goslate`` will not be updated to break google's ticket mechanism. Free lunch is over. Thanks for using.
 
 .. contents:: :local:
@@ -43,7 +43,7 @@ goslate support both Python2 and Python3. You could install it via:
  
 or just download `latest goslate.py <https://bitbucket.org/zhuoqiang/goslate/raw/tip/goslate.py>`_ directly and use
 
-``futures`` `pacakge <https://pypi.python.org/pypi/futures>`_ is optional but recommended to install for best performance in large text translation task.
+``futures`` `package <https://pypi.python.org/pypi/futures>`_ is optional but recommended to install for best performance in large text translation tasks.
 
  
 Proxy Support
@@ -64,14 +64,14 @@ Proxy support could be added as following:
  translation = gs_with_proxy.translate("hello world", "de")
  
  
-Romanlization
+Romanization
 ====================
 
 Romanization or latinization (or romanisation, latinisation), in linguistics, is the conversion of writing from a different writing system to the Roman (Latin) script, or a system for doing so.
 
-For example, pinyin is the default romanlization method for Chinese language.
+For example, pinyin is the default romanization method for Chinese language.
 
-You could get translation in romanlized writing as following:
+You could get translation in romanized writing as following:
 
 .. sourcecode:: python
 
@@ -112,7 +112,7 @@ Sometimes all you need is just find out which language the text is:
 Concurrent Querying 
 ====================
 
-It is not necessary to roll your own multi-thread solution to speed up massive translation. Goslate already done it for you. It utilizes ``concurrent.futures`` for concurent querying. The max worker number is 120 by default. 
+It is not necessary to roll your own multi-thread solution to speed up massive translation. Goslate has already done it for you. It utilizes ``concurrent.futures`` for concurrent querying. The max worker number is 120 by default. 
 
 The worker number could be changed as following:
 
@@ -124,12 +124,12 @@ The worker number could be changed as following:
  >>> gs = goslate.Goslate(executor=executor)
  >>> it = gs.translate(['text1', 'text2', 'text3'])
  >>> list(it)
- ['tranlation1', 'translation2', 'translation3']
+ ['translation1', 'translation2', 'translation3']
 
  
-It is adviced to install ``concurrent.futures`` backport lib in python2.7 (python3 has it by default) to enable concurrent querying. 
+It is advised to install ``concurrent.futures`` backport lib in python2.7 (python3 has it by default) to enable concurrent querying. 
 
-The input could be list, tuple or any iterater, even the file object which iterate line by line
+The input could be list, tuple or any iterator, even the file object which iterate line by line
 
 .. sourcecode:: python
 
@@ -143,7 +143,7 @@ Do not worry about short texts will increase the query time. Internally, goslate
 Batch Translation
 ====================
 
-Google translation does not support very long text, goslate bypass this limitation by split the long text internally before send to Google and join the mutiple results into one translation text to the end user. 
+Google translation does not support very long text, goslate bypasses this limitation by splitting the long text internally before sending it to Google and joining the multiple results into one translation text to the end user. 
 
 .. sourcecode:: python
 
@@ -157,9 +157,9 @@ Google translation does not support very long text, goslate bypass this limitati
 Performance Consideration
 ================================
 
-Goslate use batch and concurrent fetch aggresivelly to achieve maximized translation speed internally.
+Goslate uses batch and concurrent fetch aggressively to achieve maximized translation speed internally.
 
-All you need to do is reducing API calling times by utilize batch tranlation and concurrent querying.
+All you need to do is reduce API calling times by utilizing batch translation and concurrent querying.
 
 For example, say if you want to translate 3 big text files. Instead of manually translate them one by one, line by line:
 
@@ -194,13 +194,13 @@ It is better to leave them to Goslate totally. The following code is not only si
  translation = list(translation_iter)
  
  
-Internally, goslate will first adjust the text to make them not so big that do not fit Google query API nor so small that increase the total HTTP querying times. Then it will use concurrent query to speed thing even further.
+Internally, goslate will first adjust the text to make them not so big that do not fit Google query API, nor so small that increase the total HTTP querying times. Then it will use concurrent queries to speed things even further.
  
 
 Lookup Details in Dictionary
 ================================
 
-If you want detail dictionary explaination for a single word/phrase, you could
+If you want detail dictionary explanation for a single word/phrase, you could
 
 .. sourcecode:: python
 
@@ -222,7 +222,7 @@ If you want detail dictionary explaination for a single word/phrase, you could
   0.9447732,
   [['en'], [0.9447732]]]
 
-There are 2 limitaion for this API:
+There are 2 limitations for this API:
 
 * The result is a complex list structure which you have to parse for your own usage
 
@@ -232,13 +232,13 @@ There are 2 limitaion for this API:
 Query Error
 ==================
 
-If you get HTTP 5xx error, it is probably because google has banned your client IP address from transation querying.
+If you get an HTTP 5xx error, it is probably because google has banned your client IP address from transaction querying.
 
-You could verify it by access google translation service in browser manully.
+You could verify it by accessing google translation service in the browser manually.
 
 You could try the following to overcome this issue:
 
-* query through a HTTP/SOCK5 proxy, see `Proxy Support`_
+* query through a HTTP/SOCKS5 proxy, see `Proxy Support`_
 
 * using another google domain for translation: ``gs = Goslate(service_urls=['http://translate.google.de'])``
 
@@ -318,7 +318,7 @@ What's New
 1.3.0
 ---------
 
-* [new feature] Translation in roman writing system (romanlization), thanks for Javier del Alamo's contribution.
+* [new feature] Translation in roman writing system (romanization), thanks for Javier del Alamo's contribution.
   
 * [new feature] Customizable service URL. you could provide multiple google translation service URLs for better concurrency performance
 
@@ -327,3 +327,4 @@ What's New
 * [fix bug] Google translation may change normal space to no-break space
 
 * [fix bug] Google web API changed for getting supported language list
+
