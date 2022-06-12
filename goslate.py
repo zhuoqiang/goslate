@@ -184,7 +184,7 @@ class Goslate(object):
             except socket.error as e:
                 if self._DEBUG:
                     import threading
-                    print(threading.currentThread(), e)
+                    print(threading.current_thread(), e)
                 if 'Connection reset by peer' not in str(e):
                     raise e
                 exception = e
