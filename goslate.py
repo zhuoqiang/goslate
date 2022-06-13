@@ -40,7 +40,7 @@ __email__ = 'zhuo.qiang@gmail.com'
 __copyright__ = "2013, http://zhuoqiang.github.io/"
 __license__ = "MIT"
 __date__ = '2013-05-11'
-__version_info__ = (1, 5, 2)
+__version_info__ = (1, 5, 3)
 __version__ = '.'.join(str(i) for i in __version_info__)
 __home__ = 'https://github.com/zhuoqiang/goslate'
 __download__ = 'https://pypi.python.org/pypi/goslate'
@@ -66,6 +66,14 @@ def _unwrapper_single_element(elements):
     return elements
         
     
+def _get_current_thread():
+    import threading
+    if hasattr(threading, "current_thread"):
+        return threading.currentThread()
+    else:
+        return threading.currentThread()
+
+
 class Error(Exception):
     '''Error type'''
     pass
@@ -101,6 +109,9 @@ class Goslate(object):
     :param retry_times: how many times to retry when connection reset error occured. Default to 4
     :type retry_times: int
         
+    :param retry_wait_duration: how many seconds to wait before retry when connection reset error occured. Default to 0.0001s
+    :type retry_wait_duration: float
+
     :type max_workers: int
 
     :param timeout: HTTP request timeout in seconds
@@ -145,7 +156,8 @@ class Goslate(object):
     _MAX_LENGTH_PER_QUERY = 1800
 
     def __init__(self, writing=WRITING_NATIVE, opener=None, retry_times=4, executor=_g_executor,
-                 timeout=4, service_urls=('http://translate.google.com',), debug=False):
+                 timeout=4, service_urls=('http://translate.google.com',), debug=False, retry_wait_duration=0.0001):
+        self._RETRY_WAIT_DURATION = retry_wait_duration
         self._DEBUG = debug
         self._MIN_TASKS_FOR_CONCURRENT = 2
         self._opener = opener
@@ -183,12 +195,11 @@ class Goslate(object):
                 return response_content
             except socket.error as e:
                 if self._DEBUG:
-                    import threading
-                    print(threading.currentThread(), e)
+                    print(_get_current_thread(), e)
                 if 'Connection reset by peer' not in str(e):
                     raise e
                 exception = e
-                time.sleep(0.0001)
+                time.sleep(self._RETRY_WAIT_DURATION)
         raise exception
     
 
@@ -470,7 +481,7 @@ class Goslate(object):
          >>> gs = Goslate()
          >>> print(gs.detect('hello world'))
          en
-         >>> for i in gs.detect([u'hello', 'Hallo']):
+         >>> for i in gs.detect([u'apple', 'apfel']):
          ...     print(i)
          ...
          en

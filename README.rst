@@ -286,6 +286,13 @@ How to Contribute
 What's New
 ============
 
+1.5.3
+----------
+
+* handle deprecated `threading.currentThread()` properly
+* add `retry_wait_duration` param to fine control the retry behavior in case of connection error
+
+
 1.5.2
 ----------
 

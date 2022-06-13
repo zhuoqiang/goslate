@@ -15,11 +15,16 @@ import io
 
 from goslate import *
 from goslate import _main
+from goslate import _get_current_thread
+import warnings
 
 __author__ = 'ZHUO Qiang'
 __date__ = '2013-05-14'
 
-gs = Goslate(debug=False)
+import concurrent.futures
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+
+gs = Goslate(debug=False, executor=executor)
 
 class UnitTest(unittest.TestCase):
     if sys.version < '3':
@@ -36,6 +41,14 @@ class UnitTest(unittest.TestCase):
         self.assertIsGenerator(generator)
         self.assertListEqual(list(expectedResult), list(generator))
         
+    def test_get_current_thread(self):
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            current_thread = _get_current_thread()
+            self.assertFalse(w)
+            self.assertTrue(current_thread is not None)
+
     def test_translate_space(self):
         self.assertEqual(u'hallo\n welt', gs.translate('hello\n world', 'de', 'en').lower())
         
@@ -118,7 +131,7 @@ class UnitTest(unittest.TestCase):
         
     def test_translate_batch_input_with_empty_string(self):
         self.assertGeneratorEqual([u'你好世界。', u''], gs.translate([u'hello world.', u''], 'zh-cn'))
-        self.assertGeneratorEqual([u'你好世界。', u'', u'您好'], gs.translate([u'hello world.', u'', u'hello'], 'zh-cn'))
+        self.assertGeneratorEqual([u'你好世界。', u'', u'你好'], gs.translate([u'hello world.', u'', u'hello'], 'zh-cn'))
         self.assertGeneratorEqual([u'', u'你好世界。'], gs.translate([u'', u'hello world.'], 'zh-cn'))        
         
         
@@ -161,7 +174,7 @@ class UnitTest(unittest.TestCase):
         sys.stdin = io.BytesIO(u'苹果'.encode(encoding))
         sys.stdin.buffer = sys.stdin
         _main([sys.argv[0], '-t', 'en'])
-        self.assertEqual(u'Apple\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'apple\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()
         sys.stdin = io.BytesIO(b'hello world')
