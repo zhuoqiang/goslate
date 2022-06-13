@@ -286,7 +286,7 @@ How to Contribute
 What's New
 ============
 
-1.5.3
+1.5.4
 ----------
 
 * handle deprecated `threading.currentThread()` properly

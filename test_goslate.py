@@ -46,7 +46,7 @@ class UnitTest(unittest.TestCase):
             # Cause all warnings to always be triggered.
             warnings.simplefilter("always")
             current_thread = _get_current_thread()
-            self.assertFalse(w)
+            self.assertEqual(len(w), 0)
             self.assertTrue(current_thread is not None)
 
     def test_translate_space(self):
@@ -186,7 +186,7 @@ class UnitTest(unittest.TestCase):
         sys.stdin = io.BytesIO(u'苹果'.encode('utf-8'))
         sys.stdin.buffer = sys.stdin                
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8'])
-        self.assertEqual(u'Apple\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'apple\n'.encode(encoding), sys.stdout.getvalue())
         
         sys.stdout = io.BytesIO()        
         with open('for_test.tmp', 'w') as f:
@@ -219,7 +219,7 @@ class UnitTest(unittest.TestCase):
             f2.write(u'世界')
             
         _main([sys.argv[0], '-t', 'en', '-i', 'utf-8', f.name, f2.name])
-        self.assertEqual(u'Apple\nWorld\n'.encode(encoding), sys.stdout.getvalue())
+        self.assertEqual(u'apple\nworld\n'.encode(encoding), sys.stdout.getvalue())
         
 
     def test_get_languages(self):
